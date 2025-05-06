@@ -1,0 +1,27 @@
+{
+    "name": "DeepLLM Project Development Environment",
+    "build": {
+      "dockerfile": "Dockerfile"
+    },
+    "postCreateCommand": "npm install --prefix frontend && npm install --prefix backend ", 
+    "runArgs": [
+      "--mount", "source=${localWorkspaceFolder}/frontend,target=/workspace/frontend,type=bind",
+      "--mount", "source=${localWorkspaceFolder}/backend,target=/workspace/backend,type=bind"
+    ],
+    "settings": {
+      "terminal.integrated.shell.linux": "/bin/bash"
+    },
+    "extensions": [
+      "ms-azuretools.vscode-docker",
+      "esbenp.prettier-vscode",
+      "dbaeumer.vscode-eslint",
+      "eg2.vscode-npm-script"
+    ],
+    "forwardPorts": [
+      3000,
+      19000,
+      19001
+    ],
+    "postStartCommand": "echo 'Frontend and backend setup complete. Please start services manually.'"
+  }
+  
