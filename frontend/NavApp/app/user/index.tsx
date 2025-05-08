@@ -3,6 +3,7 @@ import { StyleSheet, View, Text, TouchableOpacity, ScrollView, Alert } from 'rea
 import { router, useLocalSearchParams } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { API_URL } from '../../config';
 
 interface UserData {
   name: string;
@@ -11,13 +12,13 @@ interface UserData {
 }
 
 interface Incident {
-  id: number;
+  id: string;
   title: string;
   description: string;
-  type: string;
-  severity: string;
   status: string;
-  timestamp: string;
+  severity: string;
+  type: string;
+  createdAt: string;
 }
 
 export default function UserDashboard() {
@@ -41,7 +42,7 @@ export default function UserDashboard() {
       }
 
       console.log('Fetching profile with token:', token.substring(0, 10) + '...');
-      const response = await fetch('http://192.168.0.11:3000/api/auth/profile', {
+      const response = await fetch(`${API_URL}/api/auth/profile`, {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
@@ -92,7 +93,7 @@ export default function UserDashboard() {
         return;
       }
 
-      const response = await fetch('http://192.168.0.11:3000/api/incidents', {
+      const response = await fetch(`${API_URL}/api/incidents`, {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
@@ -132,28 +133,30 @@ export default function UserDashboard() {
     <View style={styles.container}>
       <StatusBar style="auto" />
       
-      {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Dashboard</Text>
-        <TouchableOpacity onPress={handleLogout}>
-          <Text style={styles.logoutButton}>Logout</Text>
+        <View style={styles.headerLeft}>
+          <TouchableOpacity onPress={() => router.push('/map')} style={styles.backButton}>
+            <Text style={styles.backButtonText}>← Map</Text>
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Dashboard</Text>
+        </View>
+        <TouchableOpacity onPress={handleLogout} style={styles.logoutButton}>
+          <Text style={styles.logoutText}>Logout</Text>
         </TouchableOpacity>
       </View>
 
       <ScrollView style={styles.content}>
-        {/* Welcome Section */}
-        <View style={styles.welcomeSection}>
-          <Text style={styles.welcomeText}>
-            Welcome back, {userData?.name || 'User'}!
-          </Text>
-          <Text style={styles.emailText}>{userData?.email}</Text>
-        </View>
+        {userData && (
+          <View style={styles.userInfo}>
+            <Text style={styles.welcomeText}>Welcome, {userData.name}!</Text>
+            <Text style={styles.emailText}>{userData.email}</Text>
+          </View>
+        )}
 
-        {/* Statistics */}
         <View style={styles.statsContainer}>
           <View style={styles.statCard}>
             <Text style={styles.statNumber}>{totalIncidents}</Text>
-            <Text style={styles.statLabel}>Reported Incidents</Text>
+            <Text style={styles.statLabel}>Total Incidents</Text>
           </View>
           <View style={styles.statCard}>
             <Text style={styles.statNumber}>{activeIncidents}</Text>
@@ -161,8 +164,7 @@ export default function UserDashboard() {
           </View>
         </View>
 
-        {/* Action Button */}
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.reportButton}
           onPress={() => router.push('/user/report')}
         >
@@ -179,19 +181,33 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
   },
   header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
     padding: 20,
     paddingTop: 60,
     backgroundColor: '#007AFF',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  headerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  backButton: {
+    marginRight: 15,
+  },
+  backButtonText: {
+    color: '#fff',
+    fontSize: 16,
   },
   headerTitle: {
-    fontSize: 20,
+    fontSize: 24,
     fontWeight: 'bold',
     color: '#fff',
   },
   logoutButton: {
+    padding: 8,
+  },
+  logoutText: {
     color: '#fff',
     fontSize: 16,
   },
@@ -199,28 +215,29 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 20,
   },
-  welcomeSection: {
-    marginBottom: 30,
+  userInfo: {
+    marginBottom: 20,
   },
   welcomeText: {
     fontSize: 24,
     fontWeight: 'bold',
-    marginBottom: 5,
+    color: '#333',
   },
   emailText: {
     fontSize: 16,
     color: '#666',
+    marginTop: 4,
   },
   statsContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 30,
+    marginBottom: 20,
   },
   statCard: {
     flex: 1,
     backgroundColor: '#f8f9fa',
     padding: 20,
-    borderRadius: 10,
+    borderRadius: 8,
     marginHorizontal: 5,
     alignItems: 'center',
   },
@@ -228,22 +245,22 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: 'bold',
     color: '#007AFF',
-    marginBottom: 5,
   },
   statLabel: {
     fontSize: 14,
     color: '#666',
-    textAlign: 'center',
+    marginTop: 4,
   },
   reportButton: {
     backgroundColor: '#007AFF',
-    padding: 15,
+    padding: 16,
     borderRadius: 8,
     alignItems: 'center',
+    marginTop: 20,
   },
   reportButtonText: {
     color: '#fff',
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: '600',
   },
 }); 

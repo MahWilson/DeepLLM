@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { StyleSheet, View, Text, TextInput, TouchableOpacity, ScrollView, Alert } from 'react-native';
+import { StyleSheet, View, Text, TextInput, TouchableOpacity, Alert, ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
 import { router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { API_URL } from '../../config';
 
 type IncidentType = 'accident' | 'road_closure' | 'pothole' | 'obstruction' | 'police' | 'hazard' | 'blocked_lane' | 'flood' | 'road_work' | 'traffic_jam' | 'other';
 type SeverityLevel = 'low' | 'medium' | 'high';
@@ -30,7 +31,7 @@ export default function ReportIncidentScreen() {
       }
 
       console.log('Submitting incident with token:', token.substring(0, 10) + '...');
-      const response = await fetch('http://192.168.0.11:3000/api/incidents', {
+      const response = await fetch(`${API_URL}/api/incidents`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -53,147 +54,156 @@ export default function ReportIncidentScreen() {
       console.log('Incident response text:', responseText);
 
       if (response.ok) {
-        try {
-          const data = JSON.parse(responseText);
-          console.log('Incident reported successfully:', data);
-          Alert.alert('Success', 'Incident reported successfully', [
-            { 
-              text: 'OK', 
+        Alert.alert(
+          'Success',
+          'Incident reported successfully!',
+          [
+            {
+              text: 'OK',
               onPress: () => {
-                // Navigate back and refresh the dashboard
-                router.replace({
-                  pathname: '/user',
-                  params: { refresh: Date.now() }
-                });
+                router.replace('/user');
               }
             }
-          ]);
-        } catch (parseError) {
-          console.error('Failed to parse incident response:', parseError);
-          Alert.alert('Error', 'Invalid response from server');
-        }
+          ]
+        );
       } else {
         try {
-          const data = JSON.parse(responseText);
-          console.error('Failed to report incident:', data);
-          if (response.status === 401) {
-            // Token is invalid or expired
-            await AsyncStorage.removeItem('token');
-            router.replace('/auth/login');
-          } else {
-            Alert.alert('Error', data.message || 'Failed to report incident');
-          }
+          const error = JSON.parse(responseText);
+          Alert.alert(
+            'Error',
+            error.message || 'Failed to report incident. Please try again.'
+          );
         } catch (parseError) {
-          console.error('Failed to parse error response:', parseError);
-          Alert.alert('Error', 'Server returned an invalid response');
+          Alert.alert(
+            'Error',
+            'Failed to report incident. Please try again.'
+          );
         }
       }
-    } catch (error: any) {
-      console.error('Network error:', error);
-      Alert.alert('Error', 'Network error occurred. Please check your connection and try again.');
+    } catch (error) {
+      console.error('Error reporting incident:', error);
+      Alert.alert(
+        'Error',
+        'Network error occurred. Please try again.'
+      );
     } finally {
       setIsLoading(false);
     }
   };
 
+  const incidentTypes: IncidentType[] = [
+    'accident',
+    'road_closure',
+    'pothole',
+    'obstruction',
+    'police',
+    'hazard',
+    'blocked_lane',
+    'flood',
+    'road_work',
+    'traffic_jam',
+    'other'
+  ];
+
   return (
-    <View style={styles.container}>
+    <KeyboardAvoidingView 
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      style={styles.container}
+    >
       <StatusBar style="auto" />
       
-      {/* Header */}
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Report Incident</Text>
-        <TouchableOpacity onPress={() => router.back()}>
-          <Text style={styles.backButton}>Cancel</Text>
-        </TouchableOpacity>
       </View>
 
-      <ScrollView style={styles.content}>
+      <ScrollView style={styles.content} keyboardShouldPersistTaps="handled">
         <View style={styles.form}>
-          <Text style={styles.label}>Title *</Text>
-          <TextInput
-            style={styles.input}
-            value={title}
-            onChangeText={setTitle}
-            placeholder="Brief description of the incident"
-          />
-
-          <Text style={styles.label}>Description *</Text>
-          <TextInput
-            style={[styles.input, styles.textArea]}
-            value={description}
-            onChangeText={setDescription}
-            placeholder="Detailed description of the incident"
-            multiline
-            numberOfLines={4}
-          />
-
-          <Text style={styles.label}>Type</Text>
-          <View style={styles.optionsContainer}>
-            {([
-              'accident',
-              'road_closure',
-              'pothole',
-              'obstruction',
-              'police',
-              'hazard',
-              'blocked_lane',
-              'flood',
-              'road_work',
-              'traffic_jam',
-              'other'
-            ] as IncidentType[]).map((option) => (
-              <TouchableOpacity
-                key={option}
-                style={[
-                  styles.optionButton,
-                  type === option && styles.optionButtonSelected,
-                ]}
-                onPress={() => setType(option)}
-              >
-                <Text style={[
-                  styles.optionText,
-                  type === option && styles.optionTextSelected,
-                ]}>
-                  {option.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}
-                </Text>
-              </TouchableOpacity>
-            ))}
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Title</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Enter incident title"
+              value={title}
+              onChangeText={setTitle}
+              editable={!isLoading}
+            />
           </View>
 
-          <Text style={styles.label}>Severity</Text>
-          <View style={styles.optionsContainer}>
-            {(['low', 'medium', 'high'] as SeverityLevel[]).map((level) => (
-              <TouchableOpacity
-                key={level}
-                style={[
-                  styles.optionButton,
-                  severity === level && styles.optionButtonSelected,
-                ]}
-                onPress={() => setSeverity(level)}
-              >
-                <Text style={[
-                  styles.optionText,
-                  severity === level && styles.optionTextSelected,
-                ]}>
-                  {level.charAt(0).toUpperCase() + level.slice(1)}
-                </Text>
-              </TouchableOpacity>
-            ))}
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Description</Text>
+            <TextInput
+              style={[styles.input, styles.textArea]}
+              placeholder="Describe the incident"
+              value={description}
+              onChangeText={setDescription}
+              multiline
+              numberOfLines={4}
+              editable={!isLoading}
+            />
           </View>
 
-          <TouchableOpacity 
-            style={[styles.submitButton, isLoading && styles.submitButtonDisabled]} 
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Type</Text>
+            <View style={styles.typeGrid}>
+              {incidentTypes.map((t) => (
+                <TouchableOpacity
+                  key={t}
+                  style={[
+                    styles.typeButton,
+                    type === t && styles.typeButtonActive
+                  ]}
+                  onPress={() => setType(t)}
+                  disabled={isLoading}
+                >
+                  <Text style={[
+                    styles.typeButtonText,
+                    type === t && styles.typeButtonTextActive
+                  ]}>
+                    {t.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Severity</Text>
+            <View style={styles.buttonGroup}>
+              {(['low', 'medium', 'high'] as SeverityLevel[]).map((s) => (
+                <TouchableOpacity
+                  key={s}
+                  style={[
+                    styles.severityButton,
+                    severity === s && styles.severityButtonActive
+                  ]}
+                  onPress={() => setSeverity(s)}
+                  disabled={isLoading}
+                >
+                  <Text style={[
+                    styles.severityButtonText,
+                    severity === s && styles.severityButtonTextActive
+                  ]}>
+                    {s.charAt(0).toUpperCase() + s.slice(1)}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+
+          <TouchableOpacity
+            style={[styles.submitButton, isLoading && styles.submitButtonDisabled]}
             onPress={handleSubmit}
             disabled={isLoading}
           >
-            <Text style={styles.submitButtonText}>
-              {isLoading ? 'Submitting...' : 'Submit Report'}
-            </Text>
+            {isLoading ? (
+              <ActivityIndicator color="#fff" />
+            ) : (
+              <Text style={styles.submitButtonText}>Submit Report</Text>
+            )}
           </TouchableOpacity>
         </View>
       </ScrollView>
-    </View>
+    </KeyboardAvoidingView>
   );
 }
 
@@ -203,33 +213,30 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
   },
   header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
     padding: 20,
     paddingTop: 60,
     backgroundColor: '#007AFF',
   },
   headerTitle: {
-    fontSize: 20,
+    fontSize: 24,
     fontWeight: 'bold',
     color: '#fff',
   },
-  backButton: {
-    color: '#fff',
-    fontSize: 16,
-  },
   content: {
     flex: 1,
+    padding: 20,
   },
   form: {
-    padding: 20,
+    width: '100%',
+    paddingBottom: 40, // Add padding at the bottom for the submit button
+  },
+  inputGroup: {
+    marginBottom: 20,
   },
   label: {
     fontSize: 16,
-    fontWeight: '600',
-    marginBottom: 8,
     color: '#333',
+    marginBottom: 8,
   },
   input: {
     borderWidth: 1,
@@ -237,48 +244,73 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     padding: 12,
     fontSize: 16,
-    marginBottom: 20,
   },
   textArea: {
     height: 100,
     textAlignVertical: 'top',
   },
-  optionsContainer: {
+  typeGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 10,
-    marginBottom: 20,
+    gap: 8,
   },
-  optionButton: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
+  buttonGroup: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  typeButton: {
+    padding: 12,
     borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 8,
+    minWidth: '30%',
+    alignItems: 'center',
+  },
+  typeButtonActive: {
+    backgroundColor: '#007AFF',
     borderColor: '#007AFF',
   },
-  optionButtonSelected: {
-    backgroundColor: '#007AFF',
+  typeButtonText: {
+    color: '#333',
+    fontSize: 14,
+    textAlign: 'center',
   },
-  optionText: {
-    color: '#007AFF',
+  typeButtonTextActive: {
+    color: '#fff',
+  },
+  severityButton: {
+    flex: 1,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 8,
+    marginHorizontal: 4,
+    alignItems: 'center',
+  },
+  severityButtonActive: {
+    backgroundColor: '#007AFF',
+    borderColor: '#007AFF',
+  },
+  severityButtonText: {
+    color: '#333',
     fontSize: 14,
   },
-  optionTextSelected: {
+  severityButtonTextActive: {
     color: '#fff',
   },
   submitButton: {
     backgroundColor: '#007AFF',
-    padding: 15,
+    padding: 16,
     borderRadius: 8,
     alignItems: 'center',
     marginTop: 20,
   },
+  submitButtonDisabled: {
+    opacity: 0.7,
+  },
   submitButtonText: {
     color: '#fff',
     fontSize: 16,
-    fontWeight: 'bold',
-  },
-  submitButtonDisabled: {
-    opacity: 0.7,
+    fontWeight: '600',
   },
 }); 
