@@ -1,8 +1,9 @@
 const express = require('express');
 const path = require('path');
 const cors = require('cors');
-const incidentRoutes = require('./routes/incidents');
-const adminRoutes = require('./routes/admin');
+const incidentRoutes = require('./src/routes/incidents');
+const adminRoutes = require('./src/routes/admin');
+const authRoutes = require('./src/routes/auth');
 
 const app = express();
 app.use(express.json());
@@ -11,6 +12,7 @@ app.use(cors());
 // Mount routes
 app.use('/api/incidents', incidentRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/auth', authRoutes);
 
 // Optional test route
 app.get('/', (req, res) => {

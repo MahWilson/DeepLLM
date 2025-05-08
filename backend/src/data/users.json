@@ -1,0 +1,60 @@
+{
+  "users": [
+    {
+      "id": 1746685688600,
+      "name": "Test User",
+      "email": "test@example.com",
+      "password": "$2a$10$43D4nv98Avy0tdPYGvVY0eaDl7eTR6FmtL/dkuEbmqUG/XN9Egv6C",
+      "role": "user",
+      "createdAt": "2025-05-08T06:28:08.600Z"
+    },
+    {
+      "id": 1746685860051,
+      "name": "TestUser",
+      "email": "test@email.com",
+      "password": "$2a$10$cI9eidrrnARBfcZIf.lwJubXee0rRVeqL.RnmQ3ABbbg59HYe9nrO",
+      "role": "user",
+      "createdAt": "2025-05-08T06:31:00.051Z"
+    },
+    {
+      "id": 1746686137233,
+      "name": "TestUser2",
+      "email": "test2@example.com",
+      "password": "$2a$10$49O2qbuSyHUi3eHao15v1eikYbWXMvk7./I61RbMrzI5GwKB7ECju",
+      "role": "user",
+      "createdAt": "2025-05-08T06:35:37.233Z"
+    },
+    {
+      "id": 1746686374794,
+      "name": "Test3",
+      "email": "test3@example.com",
+      "password": "$2a$10$tKxlW0.eowXbYS/Kl2PUZ.vNfkdevvZYJaP1S73YbckyF/VrZHhfO",
+      "role": "user",
+      "createdAt": "2025-05-08T06:39:34.794Z"
+    },
+    {
+      "id": 1746686577909,
+      "name": "Test4",
+      "email": "test4@example.com",
+      "password": "$2a$10$KUKVJgcBeKbMzQIpGvw6COpg2n4XdV4a2av8nohLMomDg7BXFPa4S",
+      "role": "user",
+      "createdAt": "2025-05-08T06:42:57.909Z"
+    },
+    {
+      "id": 1746686858085,
+      "name": "Test5",
+      "email": "test5@example.com",
+      "password": "$2a$10$xXbFmvV30eWJs3VzEoovOOib8PrudkGYMuv/1Y3XO92OjWS0jOZZa",
+      "role": "user",
+      "createdAt": "2025-05-08T06:47:38.085Z"
+    },
+    {
+      "id": 1746687232418,
+      "name": "Test6",
+      "email": "test6@example.com",
+      "password": "$2a$10$zIx0KggAHB6BwuNAHoQQrOpcGpuU/K0KF1Bd8jXsEsKkQSyx9bSju",
+      "role": "user",
+      "createdAt": "2025-05-08T06:53:52.418Z"
+    }
+  ]
+}
