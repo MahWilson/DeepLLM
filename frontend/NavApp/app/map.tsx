@@ -5,7 +5,7 @@ import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
+import MapViewComponent from '../components/MapViewComponent';
 import SearchBar from '../components/SearchBar';
 import { API_URL } from '../config';
 import { StatusBar } from 'expo-status-bar';
@@ -18,7 +18,7 @@ export default function MapScreen() {
   const [destination, setDestination] = useState<{ latitude: number; longitude: number; name: string } | null>(null);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
-  const [location, setLocation] = useState<Location.LocationObject | null>(null);
+  const [routeCoordinates, setRouteCoordinates] = useState<Array<{ latitude: number; longitude: number }>>([]);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   useEffect(() => {
@@ -54,14 +54,13 @@ export default function MapScreen() {
 
   const handleProfile = () => {
     if (isLoggedIn) {
-      router.push('/user');
+      router.push('/profile');
     } else {
       router.push('/auth/login');
     }
   };
 
   const handleSearch = async (query: string) => {
-    console.log('Search query:', query);
     if (!query.trim()) {
       setDestination(null);
       return;
@@ -72,34 +71,20 @@ export default function MapScreen() {
       const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(
         query
       )}&key=${GOOGLE_MAPS_API_KEY}`;
-      console.log('Search URL:', url);
       
       const response = await fetch(url);
-      console.log('Search response status:', response.status);
-      
       const data = await response.json();
-      console.log('Search response data:', data);
 
       if (data.results && data.results.length > 0) {
         const location = data.results[0].geometry.location;
         const name = data.results[0].formatted_address;
-        console.log('Found location:', location, 'name:', name);
         
         setDestination({
           latitude: location.lat,
           longitude: location.lng,
           name,
         });
-
-        // Animate map to the destination
-        mapRef.current?.animateToRegion({
-          latitude: location.lat,
-          longitude: location.lng,
-          latitudeDelta: 0.01,
-          longitudeDelta: 0.01,
-        });
       } else {
-        console.log('No results found');
         Alert.alert('Not Found', 'No results found for this location.');
       }
     } catch (error) {
@@ -109,8 +94,6 @@ export default function MapScreen() {
       setIsSearching(false);
     }
   };
-
-  const mapRef = React.useRef<MapView>(null);
 
   // Calculate top position to avoid notch/camera
   const topPosition = Platform.select({
@@ -131,34 +114,11 @@ export default function MapScreen() {
     <View style={styles.container}>
       <StatusBar style="auto" />
       
-      <MapView
-        ref={mapRef}
-        provider={PROVIDER_GOOGLE}
-        style={styles.map}
-        initialRegion={{
-          latitude: userLocation.latitude,
-          longitude: userLocation.longitude,
-          latitudeDelta: 0.01,
-          longitudeDelta: 0.01,
-        }}
-        showsUserLocation
-        showsMyLocationButton
-      >
-        <Marker
-          coordinate={userLocation}
-          title="You are here"
-        />
-        {destination && (
-          <Marker
-            coordinate={{
-              latitude: destination.latitude,
-              longitude: destination.longitude,
-            }}
-            title={destination.name}
-            pinColor="green"
-          />
-        )}
-      </MapView>
+      <MapViewComponent
+        userLocation={userLocation}
+        destination={destination}
+        routeCoordinates={routeCoordinates}
+      />
 
       <SearchBar 
         onSearch={handleSearch} 
@@ -170,6 +130,11 @@ export default function MapScreen() {
         style={[styles.profileButton, { top: topPosition }]}
         onPress={handleProfile}
       >
+        <Ionicons 
+          name={isLoggedIn ? "person-circle" : "log-in"} 
+          size={24} 
+          color="#fff" 
+        />
         <Text style={styles.profileButtonText}>
           {isLoggedIn ? "Profile" : "Login"}
         </Text>
@@ -222,22 +187,30 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#fff',
   },
-  map: {
-    flex: 1,
-  },
   profileButton: {
     position: 'absolute',
     right: 16,
     backgroundColor: '#007AFF',
     paddingHorizontal: 16,
     paddingVertical: 8,
-    borderRadius: 8,
-    zIndex: 1,
+    borderRadius: 20,
+    zIndex: 999,
+    flexDirection: 'row',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
   },
   profileButtonText: {
     color: '#fff',
     fontSize: 16,
     fontWeight: '600',
+    marginLeft: 8,
   },
   reportButton: {
     position: 'absolute',
@@ -263,20 +236,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     marginLeft: 8,
-  },
-  errorContainer: {
-    position: 'absolute',
-    bottom: 20,
-    left: 20,
-    right: 20,
-    backgroundColor: 'rgba(255, 0, 0, 0.8)',
-    padding: 16,
-    borderRadius: 8,
-  },
-  errorText: {
-    color: '#fff',
-    fontSize: 16,
-    textAlign: 'center',
   },
   searchResults: {
     position: 'absolute',
@@ -314,14 +273,18 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     marginLeft: 8,
   },
-  loadingContainer: {
+  errorContainer: {
     position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.7)',
+    bottom: 20,
+    left: 20,
+    right: 20,
+    backgroundColor: 'rgba(255, 0, 0, 0.8)',
+    padding: 16,
+    borderRadius: 8,
+  },
+  errorText: {
+    color: '#fff',
+    fontSize: 16,
+    textAlign: 'center',
   },
 }); 

@@ -1,3 +1,13 @@
+import 'dotenv/config';
+
+const GOOGLE_MAPS_API_KEY = process.env.GOOGLE_MAPS_API_KEY;
+const API_URL = process.env.API_URL;
+
+// Add debug logging
+console.log('Loading environment variables...');
+console.log('API_URL:', API_URL);
+console.log('GOOGLE_MAPS_API_KEY:', GOOGLE_MAPS_API_KEY);
+
 export default {
   expo: {
     name: "NavApp",
@@ -5,27 +15,15 @@ export default {
     version: "1.0.0",
     orientation: "portrait",
     userInterfaceStyle: "light",
-    scheme: "navapp",
     assetBundlePatterns: [
       "**/*"
     ],
     ios: {
       supportsTablet: true,
-      bundleIdentifier: "com.navapp",
-      config: {
-        googleMapsApiKey: process.env.GOOGLE_MAPS_API_KEY
-      }
+      bundleIdentifier: "com.navapp"
     },
     android: {
-      adaptiveIcon: {
-        backgroundColor: "#ffffff"
-      },
-      package: "com.navapp",
-      config: {
-        googleMaps: {
-          apiKey: process.env.GOOGLE_MAPS_API_KEY
-        }
-      }
+      package: "com.navapp"
     },
     plugins: [
       [
@@ -34,12 +32,6 @@ export default {
           locationAlwaysAndWhenInUsePermission: "Allow $(PRODUCT_NAME) to use your location.",
         },
       ],
-    ],
-  },
-  extra: {
-    eas: {
-      projectId: "your-project-id",
-    },
-    googleMapsApiKey: process.env.GOOGLE_MAPS_API_KEY,
+    ]
   },
 }; 
