@@ -7,7 +7,7 @@ import * as Location from 'expo-location';
 import { Colors } from '../constants/Colors';
 import { useColorScheme } from '../hooks/useColorScheme';
 
-const GOOGLE_MAPS_API_KEY = 'AIzaSyCnbC98Iv2mVPCQZRr86DsrsafMsm8sQSI';
+const GOOGLE_MAPS_API_KEY = process.env.GOOGLE_MAPS_API_KEY;
 
 type Props = {
   onPlaceSelected: (latitude: number, longitude: number) => void;

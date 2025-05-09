@@ -1,20 +1,25 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, View, Alert, TouchableOpacity, Text, Platform } from 'react-native';
+import { StyleSheet, View, Alert, TouchableOpacity, Text, Platform, ActivityIndicator, Linking } from 'react-native';
 import * as Location from 'expo-location';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
 import SearchBar from '../components/SearchBar';
 import { API_URL } from '../config';
+import { StatusBar } from 'expo-status-bar';
 
-const GOOGLE_MAPS_API_KEY = 'AIzaSyCnbC98Iv2mVPCQZRr86DsrsafMsm8sQSI';
+const GOOGLE_MAPS_API_KEY = process.env.GOOGLE_MAPS_API_KEY;
 
 export default function MapScreen() {
+  const insets = useSafeAreaInsets();
   const [userLocation, setUserLocation] = useState<{ latitude: number; longitude: number } | null>(null);
   const [destination, setDestination] = useState<{ latitude: number; longitude: number; name: string } | null>(null);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
+  const [location, setLocation] = useState<Location.LocationObject | null>(null);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   useEffect(() => {
     checkLoginStatus();
@@ -85,6 +90,14 @@ export default function MapScreen() {
           longitude: location.lng,
           name,
         });
+
+        // Animate map to the destination
+        mapRef.current?.animateToRegion({
+          latitude: location.lat,
+          longitude: location.lng,
+          latitudeDelta: 0.01,
+          longitudeDelta: 0.01,
+        });
       } else {
         console.log('No results found');
         Alert.alert('Not Found', 'No results found for this location.');
@@ -97,6 +110,15 @@ export default function MapScreen() {
     }
   };
 
+  const mapRef = React.useRef<MapView>(null);
+
+  // Calculate top position to avoid notch/camera
+  const topPosition = Platform.select({
+    ios: insets.top + 10,
+    android: insets.top + 10,
+    default: 10,
+  });
+
   if (!userLocation) {
     return (
       <View style={styles.container}>
@@ -107,7 +129,10 @@ export default function MapScreen() {
 
   return (
     <View style={styles.container}>
+      <StatusBar style="auto" />
+      
       <MapView
+        ref={mapRef}
         provider={PROVIDER_GOOGLE}
         style={styles.map}
         initialRegion={{
@@ -135,19 +160,17 @@ export default function MapScreen() {
         )}
       </MapView>
 
-      <SearchBar onSearch={handleSearch} />
+      <SearchBar 
+        onSearch={handleSearch} 
+        isLoading={isSearching}
+      />
       
       {/* Profile Button */}
       <TouchableOpacity 
-        style={styles.profileButton}
+        style={[styles.profileButton, { top: topPosition }]}
         onPress={handleProfile}
       >
-        <Ionicons 
-          name={isLoggedIn ? "person-circle" : "log-in"} 
-          size={24} 
-          color="#007AFF" 
-        />
-        <Text style={styles.profileText}>
+        <Text style={styles.profileButtonText}>
           {isLoggedIn ? "Profile" : "Login"}
         </Text>
       </TouchableOpacity>
@@ -161,6 +184,34 @@ export default function MapScreen() {
           <Ionicons name="add-circle" size={24} color="#fff" />
           <Text style={styles.reportButtonText}>Report Incident</Text>
         </TouchableOpacity>
+      )}
+
+      {/* Search Results */}
+      {destination && !isSearching && (
+        <View style={styles.searchResults}>
+          <Text style={styles.searchResultsTitle}>{destination.name}</Text>
+          <TouchableOpacity 
+            style={styles.directionsButton}
+            onPress={() => {
+              const url = Platform.select({
+                ios: `maps://app?daddr=${destination.latitude},${destination.longitude}`,
+                android: `google.navigation:q=${destination.latitude},${destination.longitude}`,
+              });
+              if (url) {
+                Linking.openURL(url);
+              }
+            }}
+          >
+            <Ionicons name="navigate" size={20} color="#fff" />
+            <Text style={styles.directionsButtonText}>Get Directions</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+
+      {errorMsg && (
+        <View style={styles.errorContainer}>
+          <Text style={styles.errorText}>{errorMsg}</Text>
+        </View>
       )}
     </View>
   );
@@ -176,28 +227,17 @@ const styles = StyleSheet.create({
   },
   profileButton: {
     position: 'absolute',
-    top: Platform.OS === 'ios' ? 60 : 40,
-    right: 20,
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#fff',
-    paddingHorizontal: 15,
+    right: 16,
+    backgroundColor: '#007AFF',
+    paddingHorizontal: 16,
     paddingVertical: 8,
-    borderRadius: 20,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    elevation: 5,
+    borderRadius: 8,
+    zIndex: 1,
   },
-  profileText: {
-    color: '#007AFF',
-    fontSize: 14,
+  profileButtonText: {
+    color: '#fff',
+    fontSize: 16,
     fontWeight: '600',
-    marginLeft: 5,
   },
   reportButton: {
     position: 'absolute',
@@ -223,5 +263,65 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     marginLeft: 8,
+  },
+  errorContainer: {
+    position: 'absolute',
+    bottom: 20,
+    left: 20,
+    right: 20,
+    backgroundColor: 'rgba(255, 0, 0, 0.8)',
+    padding: 16,
+    borderRadius: 8,
+  },
+  errorText: {
+    color: '#fff',
+    fontSize: 16,
+    textAlign: 'center',
+  },
+  searchResults: {
+    position: 'absolute',
+    bottom: 100,
+    left: 20,
+    right: 20,
+    backgroundColor: 'white',
+    borderRadius: 8,
+    padding: 16,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  searchResultsTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    marginBottom: 12,
+  },
+  directionsButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#007AFF',
+    padding: 12,
+    borderRadius: 8,
+    justifyContent: 'center',
+  },
+  directionsButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+    marginLeft: 8,
+  },
+  loadingContainer: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.7)',
   },
 }); 
