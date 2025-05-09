@@ -13,7 +13,7 @@ export default {
       supportsTablet: true,
       bundleIdentifier: "com.navapp",
       config: {
-        googleMapsApiKey: "AIzaSyCnbC98Iv2mVPCQZRr86DsrsafMsm8sQSI"
+        googleMapsApiKey: process.env.GOOGLE_MAPS_API_KEY
       }
     },
     android: {
@@ -23,7 +23,7 @@ export default {
       package: "com.navapp",
       config: {
         googleMaps: {
-          apiKey: "AIzaSyCnbC98Iv2mVPCQZRr86DsrsafMsm8sQSI"
+          apiKey: process.env.GOOGLE_MAPS_API_KEY
         }
       }
     },
@@ -31,9 +31,15 @@ export default {
       [
         "expo-location",
         {
-          locationAlwaysAndWhenInUsePermission: "Allow NavApp to use your location."
-        }
-      ]
-    ]
-  }
+          locationAlwaysAndWhenInUsePermission: "Allow $(PRODUCT_NAME) to use your location.",
+        },
+      ],
+    ],
+  },
+  extra: {
+    eas: {
+      projectId: "your-project-id",
+    },
+    googleMapsApiKey: process.env.GOOGLE_MAPS_API_KEY,
+  },
 }; 
