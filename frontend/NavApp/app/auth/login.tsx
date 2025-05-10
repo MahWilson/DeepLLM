@@ -33,8 +33,9 @@ export default function LoginScreen() {
       console.log('Login response data:', { ...data, token: data.token ? '[HIDDEN]' : null });
 
       if (response.ok) {
-        // Store token in AsyncStorage
+        // Store token and user role in AsyncStorage
         await AsyncStorage.setItem('token', data.token);
+        await AsyncStorage.setItem('userRole', data.user.role);
         
         Alert.alert(
           'Success',
@@ -43,13 +44,9 @@ export default function LoginScreen() {
             {
               text: 'OK',
               onPress: () => {
-                console.log('Navigating to:', data.user.role === 'admin' ? '/admin' : '/user');
-                // Navigate based on user role
-                if (data.user.role === 'admin') {
-                  router.replace('/admin');
-                } else {
+                console.log('Navigating to:', data.user.role === 'admin' ? '/user' : '/user');
+                // Always navigate to user page, admin dashboard will be accessible via button
                   router.replace('/user');
-                }
               }
             }
           ]

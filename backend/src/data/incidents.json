@@ -309,5 +309,86 @@
     "id": 1746718914593,
     "timestamp": "2025-05-08T15:41:54.593Z",
     "status": "active"
+  },
+  {
+    "type": "flood",
+    "severity": "medium",
+    "location": {
+      "latitude": 2.898524224230981,
+      "longitude": 101.79423501330388
+    },
+    "id": 1746886610857,
+    "timestamp": "2025-05-10T14:16:50.857Z",
+    "status": "active"
+  },
+  {
+    "type": "traffic_jam",
+    "severity": "medium",
+    "location": {
+      "latitude": 2.898528928942252,
+      "longitude": 101.79418704222377
+    },
+    "id": 1746890783779,
+    "timestamp": "2025-05-10T15:26:23.779Z",
+    "status": "active"
+  },
+  {
+    "type": "flood",
+    "severity": "medium",
+    "location": {
+      "latitude": 2.898528928942252,
+      "longitude": 101.79418704222377
+    },
+    "id": 1746892495580,
+    "timestamp": "2025-05-10T15:54:55.580Z",
+    "status": "active"
+  },
+  {
+    "type": "traffic_jam",
+    "severity": "medium",
+    "location": {
+      "latitude": 3.1457,
+      "longitude": 101.712
+    },
+    "id": 1746892695375,
+    "timestamp": "2025-05-10T15:58:15.375Z",
+    "status": "active"
+  },
+  {
+    "title": "Accident Incident",
+    "description": "Reported via voice command: accident with high severity",
+    "type": "accident",
+    "severity": "high",
+    "location": {
+      "latitude": 2.898525365092014,
+      "longitude": 101.79423540142933
+    },
+    "id": 1746905602922,
+    "timestamp": "2025-05-10T19:33:22.922Z",
+    "status": "active"
+  },
+  {
+    "title": "Accident Incident",
+    "description": "Reported via voice command: accident with high severity",
+    "type": "accident",
+    "severity": "high",
+    "location": {
+      "latitude": 2.8985253785730216,
+      "longitude": 101.7942353940366
+    },
+    "id": 1746905755523,
+    "timestamp": "2025-05-10T19:35:55.523Z",
+    "status": "active"
+  },
+  {
+    "type": "flood",
+    "severity": "medium",
+    "location": {
+      "latitude": 3.1422,
+      "longitude": 101.7
+    },
+    "id": 1746910821272,
+    "timestamp": "2025-05-10T21:00:21.272Z",
+    "status": "active"
   }
 ]

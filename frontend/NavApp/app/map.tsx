@@ -1,97 +1,176 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { StyleSheet, View, Alert, TouchableOpacity, Text, Platform, ActivityIndicator, Linking } from 'react-native';
 import * as Location from 'expo-location';
-import { router } from 'expo-router';
+import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import MapViewComponent from '../components/MapViewComponent';
+import MapView, { Marker, Polyline } from 'react-native-maps';
 import SearchBar from '../components/SearchBar';
-import { API_URL } from '../config';
+import { GOOGLE_MAPS_API_KEY } from '../config';
 import { StatusBar } from 'expo-status-bar';
-
-const GOOGLE_MAPS_API_KEY = process.env.GOOGLE_MAPS_API_KEY;
 
 export default function MapScreen() {
   const insets = useSafeAreaInsets();
-  const [userLocation, setUserLocation] = useState<{ latitude: number; longitude: number } | null>(null);
-  const [destination, setDestination] = useState<{ latitude: number; longitude: number; name: string } | null>(null);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [isSearching, setIsSearching] = useState(false);
+  const router = useRouter();
+  const [userLocation, setUserLocation] = useState<Location.LocationObject | null>(null);
+  const [destination, setDestination] = useState<{ latitude: number; longitude: number; name?: string; address?: string } | null>(null);
   const [routeCoordinates, setRouteCoordinates] = useState<Array<{ latitude: number; longitude: number }>>([]);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [locationSubscription, setLocationSubscription] = useState<Location.LocationSubscription | null>(null);
+  const [userHeading, setUserHeading] = useState(0);
+  const mapRef = useRef<MapView>(null);
 
   useEffect(() => {
-    checkLoginStatus();
     (async () => {
       try {
         const { status } = await Location.requestForegroundPermissionsAsync();
         if (status !== 'granted') {
-          Alert.alert('Permission Denied', 'Location permission is required to use this app.');
+          Alert.alert('Permission Denied', 'Enable location permissions in settings.');
           return;
         }
 
         const location = await Location.getCurrentPositionAsync({});
-        setUserLocation({
-          latitude: location.coords.latitude,
-          longitude: location.coords.longitude,
-        });
+        setUserLocation(location);
+
+        // Start watching location
+        const subscription = await Location.watchPositionAsync(
+          {
+            accuracy: Location.Accuracy.High,
+            distanceInterval: 10, // Update every 10 meters
+          },
+          (newLocation) => {
+            setUserLocation(newLocation);
+            setUserHeading(newLocation.coords.heading || 0);
+          }
+        );
+        setLocationSubscription(subscription);
       } catch (error) {
-        console.error('Error:', error);
+        console.error('Error getting location:', error);
         Alert.alert('Error', 'Failed to get location.');
       }
     })();
+
+    return () => {
+      if (locationSubscription) {
+        locationSubscription.remove();
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    checkLoginStatus();
   }, []);
 
   const checkLoginStatus = async () => {
     try {
-      const token = await AsyncStorage.getItem('token');
+      const token = await AsyncStorage.getItem('userToken');
       setIsLoggedIn(!!token);
     } catch (error) {
       console.error('Error checking login status:', error);
     }
   };
 
-  const handleProfile = () => {
-    if (isLoggedIn) {
-      router.push('/profile');
-    } else {
-      router.push('/auth/login');
+  const handlePlaceSelected = (latitude: number, longitude: number, placeDetails?: { name: string; address: string }) => {
+    setDestination({ 
+      latitude, 
+      longitude, 
+      name: placeDetails?.name,
+      address: placeDetails?.address 
+    });
+    // Clear previous route
+    setRouteCoordinates([]);
+  };
+
+  const handleClearDestination = () => {
+      setDestination(null);
+    setRouteCoordinates([]);
+  };
+
+  const handleRouteUpdate = (coordinates: Array<{ latitude: number; longitude: number }>) => {
+    setRouteCoordinates(coordinates);
+  };
+
+  const handleNavigationStart = async () => {
+    if (!destination || !userLocation) return;
+
+    try {
+      // Get route coordinates from Google Directions API
+      const response = await fetch(
+        `https://maps.googleapis.com/maps/api/directions/json?origin=${userLocation.coords.latitude},${userLocation.coords.longitude}&destination=${destination.latitude},${destination.longitude}&key=${GOOGLE_MAPS_API_KEY}`
+      );
+      const data = await response.json();
+
+      if (data.routes && data.routes.length > 0) {
+        const points = data.routes[0].overview_polyline.points;
+        const coordinates = decodePolyline(points);
+        setRouteCoordinates(coordinates);
+      }
+
+      // Open navigation in native app
+      const url = Platform.select({
+        ios: `maps://app?daddr=${destination.latitude},${destination.longitude}&saddr=${userLocation.coords.latitude},${userLocation.coords.longitude}`,
+        android: `google.navigation:q=${destination.latitude},${destination.longitude}`,
+      });
+
+      if (url) {
+        const canOpen = await Linking.canOpenURL(url);
+        if (canOpen) {
+          await Linking.openURL(url);
+      } else {
+          Alert.alert('Error', 'Could not open navigation app.');
+        }
+      }
+    } catch (error) {
+      console.error('Error starting navigation:', error);
+      Alert.alert('Error', 'Failed to start navigation.');
     }
   };
 
-  const handleSearch = async (query: string) => {
-    if (!query.trim()) {
-      setDestination(null);
-      return;
+  // Helper function to decode Google's polyline format
+  const decodePolyline = (encoded: string) => {
+    const poly = [];
+    let index = 0;
+    let lat = 0;
+    let lng = 0;
+
+    while (index < encoded.length) {
+      let shift = 0;
+      let result = 0;
+
+      do {
+        let b = encoded.charCodeAt(index++) - 63;
+        result |= (b & 0x1f) << shift;
+        shift += 5;
+      } while (result >= 0x20);
+
+      let dlat = ((result & 1) ? ~(result >> 1) : (result >> 1));
+      lat += dlat;
+
+      shift = 0;
+      result = 0;
+
+      do {
+        let b = encoded.charCodeAt(index++) - 63;
+        result |= (b & 0x1f) << shift;
+        shift += 5;
+      } while (result >= 0x20);
+
+      let dlng = ((result & 1) ? ~(result >> 1) : (result >> 1));
+      lng += dlng;
+
+      poly.push({ latitude: lat / 1e5, longitude: lng / 1e5 });
     }
 
-    try {
-      setIsSearching(true);
-      const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(
-        query
-      )}&key=${GOOGLE_MAPS_API_KEY}`;
-      
-      const response = await fetch(url);
-      const data = await response.json();
+    return poly;
+  };
 
-      if (data.results && data.results.length > 0) {
-        const location = data.results[0].geometry.location;
-        const name = data.results[0].formatted_address;
-        
-        setDestination({
-          latitude: location.lat,
-          longitude: location.lng,
-          name,
-        });
-      } else {
-        Alert.alert('Not Found', 'No results found for this location.');
-      }
-    } catch (error) {
-      console.error('Search error:', error);
-      Alert.alert('Error', 'Failed to search for location.');
-    } finally {
-      setIsSearching(false);
+  const handleProfile = () => {
+    if (isLoggedIn) {
+      router.push('/user/profile');
+    } else {
+      router.push('/auth/login');
     }
   };
 
@@ -114,16 +193,65 @@ export default function MapScreen() {
     <View style={styles.container}>
       <StatusBar style="auto" />
       
-      <MapViewComponent
-        userLocation={userLocation}
-        destination={destination}
-        routeCoordinates={routeCoordinates}
-      />
+      <MapView
+        ref={mapRef}
+        style={styles.map}
+        initialRegion={{
+          latitude: userLocation.coords.latitude,
+          longitude: userLocation.coords.longitude,
+          latitudeDelta: 0.0922,
+          longitudeDelta: 0.0421,
+        }}
+        showsUserLocation={false}
+        showsMyLocationButton
+        showsCompass
+        showsScale
+        showsTraffic
+        showsBuildings
+        showsIndoors
+        rotateEnabled={true}
+        scrollEnabled={true}
+        pitchEnabled={true}
+        zoomEnabled={true}
+      >
+        {/* Custom Arrow Marker for User Location */}
+        {userLocation && (
+          <Marker
+            coordinate={{
+              latitude: userLocation.coords.latitude,
+              longitude: userLocation.coords.longitude,
+            }}
+            anchor={{ x: 0.5, y: 0.5 }}
+            flat={true}
+            rotation={userHeading}
+          >
+            <Ionicons name="navigate" size={40} color="#007AFF" style={{ transform: [{ rotate: `${userHeading}deg` }] }} />
+          </Marker>
+        )}
+        {destination && (
+          <Marker
+            coordinate={destination}
+            title={destination.name || "Destination"}
+            description={destination.address}
+            pinColor="red"
+          />
+        )}
+        {routeCoordinates.length > 0 && (
+          <Polyline
+            coordinates={routeCoordinates}
+            strokeWidth={3}
+            strokeColor="#0066FF"
+          />
+        )}
+      </MapView>
 
+      <View style={[styles.searchContainer, { top: topPosition }]}>
       <SearchBar 
-        onSearch={handleSearch} 
-        isLoading={isSearching}
+          onPlaceSelected={handlePlaceSelected}
+          mode="places"
+          placeholder="Search for a place..."
       />
+      </View>
       
       {/* Profile Button */}
       <TouchableOpacity 
@@ -151,28 +279,6 @@ export default function MapScreen() {
         </TouchableOpacity>
       )}
 
-      {/* Search Results */}
-      {destination && !isSearching && (
-        <View style={styles.searchResults}>
-          <Text style={styles.searchResultsTitle}>{destination.name}</Text>
-          <TouchableOpacity 
-            style={styles.directionsButton}
-            onPress={() => {
-              const url = Platform.select({
-                ios: `maps://app?daddr=${destination.latitude},${destination.longitude}`,
-                android: `google.navigation:q=${destination.latitude},${destination.longitude}`,
-              });
-              if (url) {
-                Linking.openURL(url);
-              }
-            }}
-          >
-            <Ionicons name="navigate" size={20} color="#fff" />
-            <Text style={styles.directionsButtonText}>Get Directions</Text>
-          </TouchableOpacity>
-        </View>
-      )}
-
       {errorMsg && (
         <View style={styles.errorContainer}>
           <Text style={styles.errorText}>{errorMsg}</Text>
@@ -185,106 +291,57 @@ export default function MapScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+  },
+  map: {
+    flex: 1,
+  },
+  searchContainer: {
+    position: 'absolute',
+    left: 20,
+    right: 20,
+    zIndex: 1,
   },
   profileButton: {
     position: 'absolute',
-    right: 16,
-    backgroundColor: '#007AFF',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
+    right: 20,
+    backgroundColor: 'rgba(0,0,0,0.7)',
+    padding: 10,
     borderRadius: 20,
-    zIndex: 999,
     flexDirection: 'row',
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    elevation: 5,
+    zIndex: 1,
   },
   profileButtonText: {
     color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
-    marginLeft: 8,
+    marginLeft: 5,
   },
   reportButton: {
     position: 'absolute',
-    bottom: 30,
+    bottom: 20,
     right: 20,
+    backgroundColor: 'rgba(0,0,0,0.7)',
+    padding: 10,
+    borderRadius: 20,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#007AFF',
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    borderRadius: 25,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    elevation: 5,
+    zIndex: 1,
   },
   reportButtonText: {
     color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
-    marginLeft: 8,
-  },
-  searchResults: {
-    position: 'absolute',
-    bottom: 100,
-    left: 20,
-    right: 20,
-    backgroundColor: 'white',
-    borderRadius: 8,
-    padding: 16,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    elevation: 5,
-  },
-  searchResultsTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    marginBottom: 12,
-  },
-  directionsButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#007AFF',
-    padding: 12,
-    borderRadius: 8,
-    justifyContent: 'center',
-  },
-  directionsButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
-    marginLeft: 8,
+    marginLeft: 5,
   },
   errorContainer: {
     position: 'absolute',
-    bottom: 20,
+    top: 100,
     left: 20,
     right: 20,
-    backgroundColor: 'rgba(255, 0, 0, 0.8)',
-    padding: 16,
-    borderRadius: 8,
+    backgroundColor: 'rgba(255,0,0,0.8)',
+    padding: 10,
+    borderRadius: 5,
+    zIndex: 2,
   },
   errorText: {
     color: '#fff',
-    fontSize: 16,
     textAlign: 'center',
   },
 }); 

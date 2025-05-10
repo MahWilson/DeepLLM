@@ -55,6 +55,14 @@
       "password": "$2a$10$zIx0KggAHB6BwuNAHoQQrOpcGpuU/K0KF1Bd8jXsEsKkQSyx9bSju",
       "role": "user",
       "createdAt": "2025-05-08T06:53:52.418Z"
+    },
+    {
+      "id": 1746687232419,
+      "name": "Admin User",
+      "email": "admin@example.com",
+      "password": "$2a$10$vX04aOIfY6hPvZvF7jG1g.mr3SREjZiCEg0s6Tv6VBVwcNd/rvGvq",
+      "role": "admin",
+      "createdAt": "2025-05-08T06:53:52.418Z"
     }
   ]
 }

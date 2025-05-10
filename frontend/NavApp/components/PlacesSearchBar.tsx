@@ -1,18 +1,13 @@
-// components/PlacesSearchBar.tsx
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, View, TextInput, FlatList, Text, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { StyleSheet, View, TextInput, FlatList, Text, TouchableOpacity, Modal, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import axios from 'axios';
 import * as Location from 'expo-location';
-import { Colors } from '../constants/Colors';
-import { useColorScheme } from '../hooks/useColorScheme';
-
-const GOOGLE_MAPS_API_KEY = process.env.GOOGLE_MAPS_API_KEY;
+import { GOOGLE_MAPS_API_KEY } from '../config';
 
 type Props = {
   onPlaceSelected: (latitude: number, longitude: number) => void;
   onNavigationStart?: () => void;
-  placeholder?: string;
 };
 
 type PlaceResult = {
@@ -29,11 +24,7 @@ type ETAInfo = {
   distance: string;
 };
 
-export default function PlacesSearchBar({ 
-  onPlaceSelected, 
-  onNavigationStart,
-  placeholder = "Search venues near you"
-}: Props) {
+export default function PlacesSearchBar({ onPlaceSelected, onNavigationStart }: Props) {
   const [searchText, setSearchText] = useState('');
   const [predictions, setPredictions] = useState<PlaceResult[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -42,8 +33,6 @@ export default function PlacesSearchBar({
   const [etaInfo, setEtaInfo] = useState<ETAInfo | null>(null);
   const [isCalculatingETA, setIsCalculatingETA] = useState(false);
   const [userCountry, setUserCountry] = useState<string | null>(null);
-  const colorScheme = useColorScheme();
-  const colors = Colors[colorScheme ?? 'light'];
 
   useEffect(() => {
     getUserCountry();
@@ -170,12 +159,13 @@ export default function PlacesSearchBar({
 
   return (
     <View style={styles.container}>
-      <View style={[styles.searchContainer, { backgroundColor: colors.background }]}>
-        <Ionicons name="search" size={20} color={colors.text} style={styles.searchIcon} />
+      <View style={styles.header}>
+        <View style={styles.searchContainer}>
+          <Ionicons name="search" size={20} color="#000000" style={styles.searchIcon} />
         <TextInput
-          style={[styles.searchInput, { color: colors.text }]}
-          placeholder={placeholder}
-          placeholderTextColor={colors.text + '80'}
+            style={[styles.searchInput]}
+            placeholder="Search venues near you"
+            placeholderTextColor="#666666"
           value={searchText}
           onChangeText={(text) => {
             setSearchText(text);
@@ -190,102 +180,261 @@ export default function PlacesSearchBar({
             }}
             style={styles.clearButton}
           >
-            <Ionicons name="close-circle" size={20} color={colors.text} />
+              <Ionicons name="close-circle" size={20} color="#000000" />
           </TouchableOpacity>
         )}
+        </View>
       </View>
 
       {predictions.length > 0 && (
         <FlatList
           data={predictions}
-          style={[styles.resultsList, { backgroundColor: colors.background }]}
+          style={styles.resultsList}
           keyExtractor={(item) => item.place_id}
+          keyboardShouldPersistTaps="handled"
           renderItem={({ item }) => (
             <TouchableOpacity
               style={styles.resultItem}
-              onPress={() => handlePlaceSelect(item.place_id, item.description)}
+              onPress={() => handlePlaceSelect(item.place_id, item.structured_formatting?.main_text || item.description)}
             >
-              <Text style={[styles.resultText, { color: colors.text }]}>
+              <View style={styles.resultContent}>
+                <View style={styles.locationIcon}>
+                  <Ionicons name="location" size={20} color="#4361EE" />
+                </View>
+                <View style={styles.resultTextContainer}>
+                  <Text style={styles.mainText}>
                 {item.structured_formatting?.main_text || item.description}
               </Text>
-              <Text style={[styles.resultSubtext, { color: colors.text + '80' }]}>
-                {item.structured_formatting?.secondary_text || ''}
+                  {item.structured_formatting?.secondary_text && (
+                    <Text style={styles.secondaryText}>
+                      {item.structured_formatting.secondary_text}
               </Text>
+                  )}
+                </View>
+              </View>
             </TouchableOpacity>
           )}
         />
       )}
 
-      {isLoading && (
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="small" color={colors.tint} />
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={showConfirmation}
+        onRequestClose={() => setShowConfirmation(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Confirm Destination</Text>
+            <Text style={styles.modalText}>
+              {selectedPlace?.name}
+            </Text>
+            {isCalculatingETA ? (
+              <View style={styles.etaLoadingContainer}>
+                <ActivityIndicator size="small" color="#4361EE" />
+                <Text style={styles.etaLoadingText}>Calculating route...</Text>
+              </View>
+            ) : etaInfo ? (
+              <View style={styles.etaContainer}>
+                <View style={styles.etaRow}>
+                  <Ionicons name="time-outline" size={20} color="#4361EE" />
+                  <Text style={styles.etaText}>Estimated time: {etaInfo.duration}</Text>
+                </View>
+                <View style={styles.etaRow}>
+                  <Ionicons name="navigate-outline" size={20} color="#4361EE" />
+                  <Text style={styles.etaText}>Distance: {etaInfo.distance}</Text>
+                </View>
+              </View>
+            ) : null}
+            <View style={styles.modalButtons}>
+              <TouchableOpacity
+                style={[styles.modalButton, styles.cancelButton]}
+                onPress={() => {
+                  setShowConfirmation(false);
+                  setEtaInfo(null);
+                }}
+              >
+                <Text style={styles.buttonText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.modalButton, styles.confirmButton]}
+                onPress={handleConfirmDestination}
+              >
+                <Text style={[styles.buttonText, styles.confirmButtonText]}>Go Now</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
         </View>
-      )}
+      </Modal>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
+    width: '100%',
     position: 'absolute',
     top: 0,
-    left: 0,
-    right: 0,
     zIndex: 1,
+  },
+  header: {
+    backgroundColor: '#FFFFFF',
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    paddingBottom: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E7EB',
+    height: 100,
   },
   searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    margin: 10,
-    padding: 10,
-    borderRadius: 8,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    elevation: 5,
+    backgroundColor: '#F3F4F6',
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    height: 44,
+    top: 30,
   },
   searchIcon: {
-    marginRight: 10,
+    marginRight: 8,
   },
   searchInput: {
     flex: 1,
     fontSize: 16,
+    height: '100%',
+    color: '#000000',
   },
   clearButton: {
-    padding: 5,
+    padding: 4,
   },
   resultsList: {
+    backgroundColor: '#FFFFFF',
     maxHeight: 300,
-    marginHorizontal: 10,
-    borderRadius: 8,
+    borderBottomLeftRadius: 12,
+    borderBottomRightRadius: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  resultItem: {
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F3F4F6',
+  },
+  resultContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  locationIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#EEF2FF',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+  },
+  resultTextContainer: {
+    flex: 1,
+  },
+  mainText: {
+    fontSize: 16,
+    fontWeight: '500',
+    color: '#000000',
+  },
+  secondaryText: {
+    fontSize: 14,
+    marginTop: 2,
+    color: '#000000',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContent: {
+    backgroundColor: 'white',
+    borderRadius: 20,
+    padding: 20,
+    width: '80%',
+    alignItems: 'center',
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
       height: 2,
     },
     shadowOpacity: 0.25,
-    shadowRadius: 3.84,
+    shadowRadius: 4,
     elevation: 5,
   },
-  resultItem: {
-    padding: 15,
-    borderBottomWidth: 1,
-    borderBottomColor: '#eee',
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginBottom: 10,
+    color: '#000000',
   },
-  resultText: {
+  modalText: {
     fontSize: 16,
-    marginBottom: 4,
+    marginBottom: 20,
+    textAlign: 'center',
+    color: '#000000',
   },
-  resultSubtext: {
+  modalButtons: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    width: '100%',
+  },
+  modalButton: {
+    flex: 1,
+    padding: 12,
+    borderRadius: 10,
+    marginHorizontal: 5,
+  },
+  cancelButton: {
+    backgroundColor: '#F3F4F6',
+  },
+  confirmButton: {
+    backgroundColor: '#4361EE',
+  },
+  buttonText: {
+    textAlign: 'center',
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#000000',
+  },
+  confirmButtonText: {
+    color: '#FFFFFF',
+  },
+  etaContainer: {
+    width: '100%',
+    marginBottom: 20,
+    padding: 12,
+    backgroundColor: '#F8FAFC',
+    borderRadius: 12,
+  },
+  etaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  etaText: {
+    marginLeft: 8,
     fontSize: 14,
+    color: '#000000',
   },
-  loadingContainer: {
-    position: 'absolute',
-    right: 30,
-    top: 20,
+  etaLoadingContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 20,
+  },
+  etaLoadingText: {
+    marginLeft: 8,
+    fontSize: 14,
+    color: '#666666',
   },
 }); 

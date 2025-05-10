@@ -14,10 +14,21 @@ interface UserData {
 export default function ProfileScreen() {
   const [user, setUser] = useState<UserData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [userRole, setUserRole] = useState<string | null>(null);
 
   useEffect(() => {
     fetchUserProfile();
+    checkUserRole();
   }, []);
+
+  const checkUserRole = async () => {
+    try {
+      const role = await AsyncStorage.getItem('userRole');
+      setUserRole(role);
+    } catch (error) {
+      console.error('Error checking user role:', error);
+    }
+  };
 
   const fetchUserProfile = async () => {
     try {
@@ -70,6 +81,10 @@ export default function ProfileScreen() {
     Alert.alert('Coming Soon', 'Settings functionality will be available soon!');
   };
 
+  const handleAdminDashboard = () => {
+    router.push('/admin/dashboard');
+  };
+
   if (isLoading) {
     return (
       <View style={styles.container}>
@@ -101,6 +116,14 @@ export default function ProfileScreen() {
         <Text style={styles.email}>{user?.email || 'No email available'}</Text>
 
         <View style={styles.menu}>
+          {userRole === 'admin' && (
+            <TouchableOpacity style={styles.menuItem} onPress={handleAdminDashboard}>
+              <Ionicons name="stats-chart" size={24} color="#333" />
+              <Text style={styles.menuText}>Admin Dashboard</Text>
+              <Ionicons name="chevron-forward" size={24} color="#999" />
+            </TouchableOpacity>
+          )}
+
           <TouchableOpacity style={styles.menuItem} onPress={handleEditProfile}>
             <Ionicons name="person-outline" size={24} color="#333" />
             <Text style={styles.menuText}>Edit Profile</Text>

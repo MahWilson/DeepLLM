@@ -3,6 +3,7 @@ const router = express.Router();
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { readJSON, writeJSON, USERS_FILE } = require('../utils/fileUtils');
+const { getJwtSecret, jwtOptions } = require('../config/auth');
 
 // Register new user
 router.post('/register', async (req, res) => {
@@ -42,8 +43,8 @@ router.post('/register', async (req, res) => {
         // Generate JWT token
         const token = jwt.sign(
             { userId: newUser.id, role: newUser.role },
-            process.env.JWT_SECRET || 'your-secret-key',
-            { expiresIn: '24h' }
+            getJwtSecret(),
+            jwtOptions
         );
 
         // Return user data (excluding password)
@@ -63,6 +64,7 @@ router.post('/register', async (req, res) => {
 router.post('/login', async (req, res) => {
     try {
         const { email, password } = req.body;
+        console.log('Login attempt for email:', email);
 
         // Read users
         const data = await readJSON(USERS_FILE);
@@ -70,24 +72,28 @@ router.post('/login', async (req, res) => {
         // Find user
         const user = data.users.find(u => u.email === email);
         if (!user) {
+            console.log('Login failed: User not found');
             return res.status(401).json({ message: 'Invalid email or password' });
         }
 
         // Check password
         const isMatch = await bcrypt.compare(password, user.password);
         if (!isMatch) {
+            console.log('Login failed: Invalid password');
             return res.status(401).json({ message: 'Invalid email or password' });
         }
 
+        console.log('Login successful, generating token...');
         // Generate JWT token
         const token = jwt.sign(
             { userId: user.id, role: user.role },
-            process.env.JWT_SECRET || 'your-secret-key',
-            { expiresIn: '24h' }
+            getJwtSecret(),
+            jwtOptions
         );
 
         // Return user data (excluding password)
         const { password: _, ...userWithoutPassword } = user;
+        console.log('Login successful for user:', userWithoutPassword.email);
         res.json({
             message: 'Login successful',
             token,
@@ -140,7 +146,7 @@ function authenticateToken(req, res, next) {
         return res.status(401).json({ message: 'Authentication required' });
     }
 
-    jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key', (err, user) => {
+    jwt.verify(token, getJwtSecret(), (err, user) => {
         if (err) {
             return res.status(403).json({ message: 'Invalid or expired token' });
         }

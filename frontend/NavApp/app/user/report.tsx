@@ -26,11 +26,9 @@ export default function ReportIncidentScreen() {
       const token = await AsyncStorage.getItem('token');
       if (!token) {
         console.error('No token found');
-        router.replace('/auth/login');
         return;
       }
 
-      console.log('Submitting incident with token:', token.substring(0, 10) + '...');
       const response = await fetch(`${API_URL}/api/incidents`, {
         method: 'POST',
         headers: {
