@@ -8,9 +8,6 @@ A navigation application with voice commands, delivery optimization, and real-ti
 ## Setup Instructions
 
 ### Prerequisites
-- Node.js (v14 or higher)
-- npm or yarn
-- Expo CLI (`npm install -g expo-cli`)
 - Google Maps API Key
 - Google Speech API Key
 
@@ -24,9 +21,7 @@ cd frontend/NavApp
 2. Install dependencies:
 ```bash
 npm install
-# or
-yarn install
-```
+
 
 3. Create a `.env` file in the `frontend/NavApp` directory with the following variables:
 ```env
@@ -57,16 +52,14 @@ cd backend
 2. Install dependencies:
 ```bash
 npm install
-# or
-yarn install
-```
+
 
 3. Create a `.env` file in the `backend` directory with the following variables:
 ```env
 PORT=3000
 JWT_SECRET=your_jwt_secret_here
 GOOGLE_SPEECH_API_KEY=your_google_speech_api_key_here
-FRONTEND_URL=http://localhost:19006
+CORS_ORIGIN=http://localhost:19000
 ```
 
 4. Start the backend server:
