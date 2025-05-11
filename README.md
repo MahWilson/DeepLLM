@@ -12,14 +12,7 @@ A full-stack navigation application with voice command capabilities, real-time t
 - 🔄 Alternative route suggestions
 - 📊 Admin dashboard for incident management
 
-## Prerequisites
 
-- Node.js (v14 or higher)
-- npm or yarn
-- Expo CLI
-- Google Maps API key
-- Android Studio (for Android development)
-- Xcode (for iOS development, macOS only)
 
 ## Setup Instructions
 
@@ -45,14 +38,27 @@ npm install
 3. Create a `.env` file in the backend directory:
 ```env
 PORT=3000
-MONGODB_URI=your_mongodb_uri
-JWT_SECRET=your_jwt_secret
-FRONTEND_URL=http://localhost:8081
+NODE_ENV=development
+
+# Google Maps API Key (Replace with your actual API key)
+GOOGLE_MAPS_API_KEY=Your_API_KEY_HERE
+GOOGLE_SPEECH_API_KEY=Your_API_KEY_HERE
+PORT=3000
+NODE_ENV=development
+
+# Database Configuration (if needed later)
+# DATABASE_URL=your_database_url
+
+# JWT Secret (if needed for authentication)
+JWT_SECRET=YOURSECRETKEYHERE
+
+# Other Configuration
+CORS_ORIGIN=http://localhost:19000
 ```
 
 4. Start the backend server:
 ```bash
-npm start
+npm run dev
 ```
 
 ### 3. Frontend Setup
@@ -70,7 +76,7 @@ npm install
 3. Create a `config.secret.ts` file in the frontend/NavApp directory:
 ```typescript
 export const GOOGLE_MAPS_API_KEY = 'your_google_maps_api_key';
-export const API_URL = 'http://your_backend_url:3000';
+export const API_URL = 'http://your_pc_ipaddress:3000';
 ```
 
 4. Update the Google Maps API key in `app.json`:
@@ -92,10 +98,26 @@ export const API_URL = 'http://your_backend_url:3000';
   }
 }
 ```
+### 4. Environment Variables
 
+Create a `.env` file in the root directory /NavApp:
+```env
+GOOGLE_MAPS_API_KEY=YOURAPIKEY
+API_URL=http://your_pc_ipaddress:3000
+```
+5. Configure API Endpoints:
+   - Update the following files with your PC's IP address:
+     - `frontend/NavApp/app/admin/users.tsx` (line 21)
+     - `frontend/NavApp/app/admin/incidents/[id].tsx` (line 34)
+     - `frontend/NavApp/app/admin/incidents.tsx` (line 24)
+   - Replace `http://your_pc_ipaddress:3000` with your actual IP address
+   - Example: If your PC's IP is 192.168.1.100, use `http://192.168.1.100:3000`
+   - Make sure your backend server is running on this IP address
+   - Ensure your PC and mobile device are on the same network
+```
 5. Start the frontend development server:
 ```bash
-npm start
+npm expo start --tunnel
 ```
 
 ### 4. Environment Variables
@@ -103,9 +125,14 @@ npm start
 Create a `.env` file in the root directory:
 ```env
 GOOGLE_MAPS_API_KEY=your_google_maps_api_key
-API_URL=your_backend_url
-FRONTEND_URL=your_frontend_url
+API_URL=http://your_pc_ipaddress:3000
+
 ```
+
+> **Important**: Replace `your_pc_ipaddress` with your actual IP address in all configuration files. You can find your IP address by:
+> - Windows: Run `ipconfig` in Command Prompt
+> - macOS/Linux: Run `ifconfig` or `ip addr` in Terminal
+> - Make sure to use the IP address of your computer on the local network
 
 ### 5. Required API Keys and Services
 
@@ -117,10 +144,9 @@ FRONTEND_URL=your_frontend_url
      - Places API
      - Geocoding API
      - Distance Matrix API
+     - Google Cloud Speech to Text
 
-2. **MongoDB**
-   - Create a MongoDB Atlas account or use a local MongoDB instance
-   - Create a database and get the connection URI
+
 
 ## Project Structure
 
