@@ -40,8 +40,8 @@ export default function VoiceCommand({
 
   // Function to check for silence and stop recording if needed
   const checkForSilence = (currentLevel: number) => {
-    const VISUALIZATION_THRESHOLD = 0.2; // Lowered from 0.3 to 0.2 for more sensitivity
-    const SILENCE_DURATION = 3000; // Increased from 2000 to 3000 to give more time to speak
+    const VISUALIZATION_THRESHOLD = 0.3; // 30% of the visualization height
+    const SILENCE_DURATION = 2000; // 2 seconds
 
     // Debug logging for current state
     console.log('Current state:', {
@@ -85,18 +85,19 @@ export default function VoiceCommand({
         Audio.RecordingOptionsPresets.HIGH_QUALITY,
         (status) => {
           if (status.metering) {
-            // More sensitive noise filtering
-            const NOISE_FLOOR = -20; // Lowered from -15 to -20 for more sensitivity
-            // Wider range for normalization (-20dB to 0dB)
+            // Extremely aggressive noise filtering for air conditioner and background noise
+            // Only show levels above -15dB (increased from -25dB)
+            const NOISE_FLOOR = -15;
+            // Very narrow range for normalization (-15dB to 0dB)
             const normalizedLevel = status.metering < NOISE_FLOOR 
               ? 0 
-              : Math.max(0, Math.min(1, Math.pow((status.metering + 20) / 20, 2))); // Using square for smoother scaling
+              : Math.max(0, Math.min(1, Math.pow((status.metering + 15) / 15, 3))); // Using cube for even more aggressive scaling
             
             setAudioLevel(normalizedLevel);
             checkForSilence(normalizedLevel);
           }
         },
-        50 // Update every 50ms instead of 100ms for more responsive feedback
+        100 // Update every 100ms
       );
       
       // Update both state and refs

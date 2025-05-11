@@ -10,6 +10,7 @@ import SearchBar from '../../components/SearchBar';
 import VoiceCommand from '../../components/VoiceCommand';
 import { GOOGLE_MAPS_API_KEY, API_URL } from '../../config';
 import { StatusBar } from 'expo-status-bar';
+import axios from 'axios';
 
 interface RouteInfo {
   coordinates: Array<{
@@ -19,6 +20,7 @@ interface RouteInfo {
   steps: Array<{
     instruction: string;
     distance: string;
+    duration: string;
   }>;
   distance: string;
   duration: string;
@@ -39,6 +41,12 @@ interface RouteInfo {
   nextStopDurationInTraffic: string;
 }
 
+interface NavigationStep {
+  instruction: string;
+  distance: string;
+  duration: string;
+}
+
 export default function UserMapScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
@@ -56,7 +64,7 @@ export default function UserMapScreen() {
   const [showSeverityModal, setShowSeverityModal] = useState(false);
   const [selectedIncidentType, setSelectedIncidentType] = useState<string | null>(null);
   const [incidents, setIncidents] = useState<Array<{ type: string; severity: string; latitude: number; longitude: number }>>([]);
-  const [routeSteps, setRouteSteps] = useState<Array<{ instruction: string; distance: string }>>([]);
+  const [routeSteps, setRouteSteps] = useState<NavigationStep[]>([]);
   const [showLocationModal, setShowLocationModal] = useState(false);
   const [selectedLocation, setSelectedLocation] = useState<{ latitude: number; longitude: number; name: string } | null>(null);
   const [activeRoadClosures, setActiveRoadClosures] = useState<Array<{ roadName: string; start: string; end: string; timestamp: string; isVisible: boolean }>>([]);
@@ -83,6 +91,9 @@ export default function UserMapScreen() {
   const [optimizedRoute, setOptimizedRoute] = useState<RouteInfo | null>(null);
   const [returnToOrigin, setReturnToOrigin] = useState(true);
   const mapRef = useRef<MapView>(null);
+  const [totalDuration, setTotalDuration] = useState<string>('');
+  const [totalDistance, setTotalDistance] = useState<string>('');
+  const [currentStepIndex, setCurrentStepIndex] = useState(0);
 
   const predeterminedLocations = [
     { name: 'Bukit Bintang', latitude: 3.1457, longitude: 101.7120 },
@@ -100,6 +111,13 @@ export default function UserMapScreen() {
     checkLoginStatus();
     (async () => {
       try {
+        // Test Google Maps API key
+        const testResponse = await fetch(
+          `https://maps.googleapis.com/maps/api/geocode/json?address=test&key=${GOOGLE_MAPS_API_KEY}`
+        );
+        const testData = await testResponse.json();
+        console.log('API Key Test Response:', testData.status);
+
         const { status } = await Location.requestForegroundPermissionsAsync();
         if (status !== 'granted') {
           Alert.alert('Permission Denied', 'Enable location permissions in settings.');
@@ -201,9 +219,14 @@ export default function UserMapScreen() {
         if (data.routes[0].legs[0].steps) {
           const steps = data.routes[0].legs[0].steps.map((step: any) => ({
             instruction: step.html_instructions.replace(/<[^>]*>/g, ''), // Remove HTML tags
-            distance: step.distance.text
+            distance: step.distance.text,
+            duration: step.duration.text
           }));
           setRouteSteps(steps);
+          
+          // Set total duration and distance from the first leg
+          setTotalDuration(data.routes[0].legs[0].duration.text);
+          setTotalDistance(data.routes[0].legs[0].distance.text);
         }
         
         // Center map on route
@@ -244,13 +267,28 @@ export default function UserMapScreen() {
     // Set first navigation step
     setCurrentStep(routeSteps[0]);
     
+    // Set total duration and distance from the first leg of the route
+    if (routeSteps.length > 0) {
+      const totalDurationValue = routeSteps.reduce((acc, step) => {
+        const duration = parseInt(step.duration.split(' ')[0]);
+        return acc + duration;
+      }, 0);
+      setTotalDuration(`${totalDurationValue} min`);
+
+      const totalDistanceValue = routeSteps.reduce((acc, step) => {
+        const distance = parseFloat(step.distance.split(' ')[0]);
+        return acc + distance;
+      }, 0);
+      setTotalDistance(`${totalDistanceValue.toFixed(1)} km`);
+    }
+    
     // Center map on user location with increased zoom
     if (mapRef.current) {
       mapRef.current.animateToRegion({
         latitude: userLocation.coords.latitude,
         longitude: userLocation.coords.longitude,
-        latitudeDelta: 0.005, // Changed from 0.01 to 0.005 (50% reduction)
-        longitudeDelta: 0.005, // Changed from 0.01 to 0.005 (50% reduction)
+        latitudeDelta: 0.005,
+        longitudeDelta: 0.005,
       });
     }
   };
@@ -461,7 +499,8 @@ export default function UserMapScreen() {
           if (routeData.routes[0].legs[0].steps) {
             const steps = routeData.routes[0].legs[0].steps.map((step: any) => ({
               instruction: step.html_instructions.replace(/<[^>]*>/g, ''),
-              distance: step.distance.text
+              distance: step.distance.text,
+              duration: step.duration.text
             }));
             setRouteSteps(steps);
           }
@@ -535,7 +574,8 @@ export default function UserMapScreen() {
             coordinates: decodePolyline(route.overview_polyline.points),
             steps: leg.steps.map((step: any) => ({
               instruction: step.html_instructions.replace(/<[^>]*>/g, ''),
-              distance: step.distance.text
+              distance: step.distance.text,
+              duration: step.duration.text
             })),
             distance: leg.distance.text,
             duration: leg.duration.text,
@@ -983,7 +1023,8 @@ Duration: ${route.durationInTraffic}${trafficInfo}`,
           coordinates: allCoordinates,
           steps: route.legs[0].steps.map((step: any) => ({
             instruction: step.html_instructions.replace(/<[^>]*>/g, ''),
-            distance: step.distance.text
+            distance: step.distance.text,
+            duration: step.duration.text
           })),
           distance: `${totalDistanceInKm} km`,
           duration: `${Math.round(totalDuration / 60)} min`,
@@ -1020,6 +1061,39 @@ Duration: ${route.durationInTraffic}${trafficInfo}`,
     } catch (error) {
       console.error('Error calculating optimized route:', error);
       Alert.alert('Error', 'Failed to calculate optimized route');
+    }
+  };
+
+  const fetchRoute = async (lat: number, lng: number, destLat: number, destLng: number) => {
+    try {
+      const response = await axios.get(
+        `https://maps.googleapis.com/maps/api/directions/json?origin=${lat},${lng}&destination=${destLat},${destLng}&key=${GOOGLE_MAPS_API_KEY}`
+      );
+
+      if (response.data.status !== 'OK' || !response.data.routes?.[0]?.overview_polyline?.points) {
+        throw new Error(`Directions API error: ${response.data.status}`);
+      }
+
+      const route = response.data.routes[0];
+      const points = route.overview_polyline.points;
+      const decodedPath = decodePolyline(points);
+      setRouteCoordinates(decodedPath);
+      
+      // Store steps for navigation overlay
+      const steps = route.legs[0].steps.map((step: any) => ({
+        instruction: step.html_instructions.replace(/<[^>]*>/g, ''),
+        distance: step.distance.text,
+        duration: step.duration.text
+      }));
+      setRouteSteps(steps);
+      setCurrentStepIndex(0);
+      
+      // Set total duration and distance
+      setTotalDuration(route.legs[0].duration.text);
+      setTotalDistance(route.legs[0].distance.text);
+    } catch (error) {
+      console.error('Error fetching route:', error);
+      Alert.alert('Route Error', 'Could not get route. Try another location.');
     }
   };
 
@@ -1182,78 +1256,43 @@ Duration: ${route.durationInTraffic}${trafficInfo}`,
 
       {/* Turn-by-Turn Navigation Guide */}
       {isNavigating && currentStep && !isDeliveryMode && (
-        <View style={[styles.navigationGuide, { top: topPosition + 115 }]}>
+        <View style={[styles.navigationGuide, { top: topPosition + 110 }]}>
           <View style={styles.navigationStepContainer}>
-            <Ionicons name="navigate" size={24} color="#007AFF" />
+            <Ionicons name="navigate" size={24} color="#fff" />
             <View style={styles.navigationStepTextContainer}>
               <Text style={styles.navigationStepText}>{currentStep.instruction}</Text>
-              <Text style={styles.navigationDistanceText}>{currentStep.distance}</Text>
             </View>
           </View>
         </View>
       )}
 
-      {/* Admin Dashboard Button */}
-      {isLoggedIn && userRole === 'admin' && (
-        <TouchableOpacity 
-          style={[styles.adminButton, { top: topPosition + 85 }]}
-          onPress={handleAdminDashboard}
-        >
-          <Ionicons name="stats-chart" size={32} color="#007AFF" />
-        </TouchableOpacity>
-      )}
-
-      {/* Profile Button */}
-      <TouchableOpacity 
-        style={[styles.profileButton, { top: topPosition + 35 }]}
-        onPress={handleProfile}
-      >
-        <Ionicons name="person-circle" size={32} color="#007AFF" />
-      </TouchableOpacity>
-
-      {destination && !isNavigating && (
-        <View style={styles.placeDetailsContainer}>
-          <View style={styles.placeDetailsContent}>
-            <Text style={styles.placeName}>{destination.name || 'Selected Location'}</Text>
-            <Text style={styles.placeAddress}>{destination.address || 'No address available'}</Text>
+      {/* Regular Navigation Overlay */}
+      {isNavigating && !isDeliveryMode && (
+        <View style={[styles.navigationOverlay, { bottom: 40 }]}>
+          <View style={styles.navigationHeader}>
+            <View style={styles.destinationInfo}>
+              <Text style={styles.destinationName}>
+                {destination?.name || 'Destination'}
+              </Text>
+              <View style={styles.etaContainer}>
+                <View style={styles.etaItem}>
+                  <Ionicons name="time-outline" size={16} color="#fff" />
+                  <Text style={styles.etaText}>
+                    ETA: {totalDuration || 'Calculating...'}
+                  </Text>
+                </View>
+                <View style={styles.etaItem}>
+                  <Ionicons name="navigate-outline" size={16} color="#fff" />
+                  <Text style={styles.etaText}>
+                    Total: {totalDistance || 'Calculating...'}
+                  </Text>
+                </View>
+              </View>
+            </View>
+            <TouchableOpacity onPress={handleStopNavigation}>
+              <Ionicons name="close-circle" size={24} color="#fff" />
+            </TouchableOpacity>
           </View>
-          <TouchableOpacity 
-            style={styles.clearButton}
-            onPress={handleClearDestination}
-          >
-            <Ionicons name="close-circle" size={24} color="#666" />
-          </TouchableOpacity>
-        </View>
-      )}
-
-      {/* Hide Start Navigation button in delivery mode */}
-      {destination && !isNavigating && !isDeliveryMode && (
-        <TouchableOpacity 
-          style={styles.navigationButton}
-          onPress={handleNavigationStart}
-        >
-          <Ionicons name="navigate" size={24} color="#fff" />
-          <Text style={styles.navigationButtonText}>Start Navigation</Text>
-        </TouchableOpacity>
-      )}
-
-      {/* Report Incident Button */}
-      <TouchableOpacity 
-        style={styles.reportButton}
-        onPress={handleReportIncident}
-      >
-        <Ionicons name="warning" size={32} color="#fff" />
-      </TouchableOpacity>
-
-      {/* Delivery Mode Controls */}
-      {!isDeliveryMode && (
-        <View style={styles.deliveryControls}>
-          <TouchableOpacity
-            style={styles.deliveryButton}
-            onPress={() => setIsDeliveryMode(true)}
-          >
-            <Ionicons name="cube" size={32} color="#007AFF" />
-          </TouchableOpacity>
         </View>
       )}
 
@@ -1332,9 +1371,9 @@ Duration: ${route.durationInTraffic}${trafficInfo}`,
         </View>
       )}
 
-      {/* Navigation with Delivery Info */}
-      {isNavigating && optimizedRoute && (
-        <View style={styles.navigationOverlay}>
+      {/* Delivery Navigation Overlay */}
+      {isNavigating && optimizedRoute && isDeliveryMode && (
+        <View style={[styles.navigationOverlay, { bottom: 40 }]}>
           <View style={styles.navigationHeader}>
             <View style={styles.destinationInfo}>
               <Text style={styles.destinationName}>
@@ -1344,33 +1383,17 @@ Duration: ${route.durationInTraffic}${trafficInfo}`,
                 {optimizedRoute.waypoints?.[0]?.name || "Current Stop"}
               </Text>
               <View style={styles.etaContainer}>
-                <View style={styles.etaColumn}>
-                  <View style={styles.etaItem}>
-                    <Ionicons name="time-outline" size={16} color="#fff" />
-                    <Text style={styles.etaText}>
-                      ETA: {optimizedRoute.nextStopDurationInTraffic}
-                    </Text>
-                  </View>
-                  <View style={styles.etaItem}>
-                    <Ionicons name="navigate-outline" size={16} color="#fff" />
-                    <Text style={styles.etaText}>
-                      Next: {optimizedRoute.nextStopDistance}
-                    </Text>
-                  </View>
+                <View style={styles.etaItem}>
+                  <Ionicons name="time-outline" size={16} color="#fff" />
+                  <Text style={styles.etaText}>
+                    ETA: {optimizedRoute.nextStopDurationInTraffic}
+                  </Text>
                 </View>
-                <View style={styles.totalColumn}>
-                  <View style={styles.etaItem}>
-                    <Ionicons name="time-outline" size={16} color="#fff" />
-                    <Text style={styles.etaText}>
-                      Time: {optimizedRoute.duration}
-                    </Text>
-                  </View>
-                  <View style={styles.etaItem}>
-                    <Ionicons name="analytics-outline" size={16} color="#fff" />
-                    <Text style={styles.etaText}>
-                      Total: {optimizedRoute.distance}
-                    </Text>
-                  </View>
+                <View style={styles.etaItem}>
+                  <Ionicons name="navigate-outline" size={16} color="#fff" />
+                  <Text style={styles.etaText}>
+                    Next: {optimizedRoute.nextStopDistance}
+                  </Text>
                 </View>
               </View>
             </View>
@@ -1378,6 +1401,74 @@ Duration: ${route.durationInTraffic}${trafficInfo}`,
               <Ionicons name="close-circle" size={24} color="#fff" />
             </TouchableOpacity>
           </View>
+        </View>
+      )}
+
+      {/* Admin Dashboard Button */}
+      {isLoggedIn && userRole === 'admin' && (
+        <TouchableOpacity 
+          style={[styles.adminButton, { top: topPosition + 85 }]}
+          onPress={handleAdminDashboard}
+        >
+          <Ionicons name="stats-chart" size={32} color="#007AFF" />
+        </TouchableOpacity>
+      )}
+
+      {/* Profile Button */}
+      <TouchableOpacity 
+        style={[styles.profileButton, { top: topPosition + 35 }]}
+        onPress={handleProfile}
+      >
+        <Ionicons name="person-circle" size={32} color="#007AFF" />
+      </TouchableOpacity>
+
+      {destination && !isNavigating && (
+        <View style={styles.placeDetailsContainer}>
+          <View style={styles.placeDetailsContent}>
+            <Text style={styles.placeName}>{destination.name || 'Selected Location'}</Text>
+            <Text style={styles.placeAddress}>{destination.address || 'No address available'}</Text>
+          </View>
+          <TouchableOpacity 
+            style={styles.clearButton}
+            onPress={handleClearDestination}
+          >
+            <Ionicons name="close-circle" size={24} color="#666" />
+          </TouchableOpacity>
+        </View>
+      )}
+
+      {/* Hide Start Navigation button in delivery mode */}
+      {destination && !isNavigating && !isDeliveryMode && (
+        <TouchableOpacity 
+          style={styles.navigationButton}
+          onPress={handleNavigationStart}
+        >
+          <Ionicons name="navigate" size={24} color="#fff" />
+          <Text style={styles.navigationButtonText}>Start Navigation</Text>
+        </TouchableOpacity>
+      )}
+
+      {/* Report Incident Button */}
+      <TouchableOpacity 
+        style={styles.reportButton}
+        onPress={handleReportIncident}
+      >
+        <Ionicons name="warning" size={32} color="#fff" />
+      </TouchableOpacity>
+
+      {/* Delivery Mode Controls */}
+      {!isDeliveryMode && (
+        <View style={styles.deliveryControls}>
+          <TouchableOpacity
+            style={styles.deliveryButton}
+            onPress={() => {
+              setIsDeliveryMode(true);
+              setDeliveryStops([]);
+              setOptimizedRoute(null);
+            }}
+          >
+            <Ionicons name="cube" size={32} color="#007AFF" />
+          </TouchableOpacity>
         </View>
       )}
 
@@ -1618,18 +1709,17 @@ const styles = StyleSheet.create({
   },
   navigationOverlay: {
     position: 'absolute',
-    bottom: 40,
     left: 20,
     right: 70,
     backgroundColor: 'rgba(0,0,0,0.8)',
     borderRadius: 10,
     padding: 15,
-    zIndex: 1,
+    zIndex: 2,
   },
   navigationHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'flex-start',
+    alignItems: 'center',
   },
   destinationInfo: {
     flex: 1,
@@ -1643,18 +1733,7 @@ const styles = StyleSheet.create({
   },
   etaContainer: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
-    justifyContent: 'space-between',
-    marginTop: 8,
-    gap: 10,
-  },
-  etaColumn: {
-    flexDirection: 'column',
-    gap: 8,
-  },
-  totalColumn: {
-    flexDirection: 'column',
-    gap: 8,
+    gap: 12,
   },
   etaItem: {
     flexDirection: 'row',
@@ -1846,8 +1925,8 @@ const styles = StyleSheet.create({
   navigationGuide: {
     position: 'absolute',
     left: 30,
-    right: 30,
-    backgroundColor: 'rgba(128, 128, 128, 0.8)',
+    right: 60,
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
     borderRadius: 12,
     padding: 15,
     shadowColor: '#000',
@@ -1858,21 +1937,24 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.25,
     shadowRadius: 3.84,
     elevation: 5,
-    zIndex: 1,
+    zIndex: 3,
+    minHeight: 60,
   },
   navigationStepContainer: {
     flexDirection: 'row',
     alignItems: 'center',
+    height: '100%',
   },
   navigationStepTextContainer: {
     marginLeft: 12,
     flex: 1,
+    justifyContent: 'center',
   },
   navigationStepText: {
     fontSize: 16,
     fontWeight: '600',
     color: '#fff',
-    marginBottom: 4,
+    lineHeight: 22,
   },
   navigationDistanceText: {
     fontSize: 14,
@@ -1993,7 +2075,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     bottom: 250,
     right: 10,
-    zIndex: 1,
+    zIndex: 2,
   },
   deliveryButton: {
     backgroundColor: 'rgba(255,255,255,0.9)',
@@ -2019,7 +2101,8 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0,0,0,0.8)',
     borderRadius: 10,
     padding: 15,
-    zIndex: 1,
+    zIndex: 2,
+    maxHeight: '60%',
   },
   deliveryModeHeader: {
     flexDirection: 'row',

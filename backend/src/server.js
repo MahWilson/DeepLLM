@@ -62,7 +62,11 @@ const speechRoutes = require('./routes/speechRoutes');
 const app = express();
 
 // Middleware
-app.use(cors());
+app.use(cors({
+    origin: '*', // Allow all origins during development
+    methods: ['GET', 'POST', 'PUT', 'DELETE'],
+    credentials: true
+}));
 app.use(express.json({ limit: '50mb' })); // Increase payload limit for audio data
 app.use(morgan('dev'));
 

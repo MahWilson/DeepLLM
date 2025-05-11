@@ -5,7 +5,8 @@ import * as Location from 'expo-location';
 import axios from 'axios';
 import PlacesSearchBar from '@/components/PlacesSearchBar';
 import { Ionicons } from '@expo/vector-icons';
-import { GOOGLE_MAPS_API_KEY } from '../../config';
+
+const GOOGLE_MAPS_API_KEY = 'AIzaSyCnbC98Iv2mVPCQZRr86DsrsafMsm8sQSI';
 
 export default function HomeScreen() {
   const [location, setLocation] = useState<Location.LocationObject | null>(null);

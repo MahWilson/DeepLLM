@@ -3,7 +3,8 @@ import { StyleSheet, View, TextInput, FlatList, Text, TouchableOpacity, Modal, A
 import { Ionicons } from '@expo/vector-icons';
 import axios from 'axios';
 import * as Location from 'expo-location';
-import { GOOGLE_MAPS_API_KEY } from '../config';
+
+const GOOGLE_MAPS_API_KEY = 'AIzaSyCnbC98Iv2mVPCQZRr86DsrsafMsm8sQSI';
 
 type Props = {
   onPlaceSelected: (latitude: number, longitude: number) => void;
