@@ -25,7 +25,7 @@
   },
   "_comment": "perform npm install --save-dev nodemon, then can delete the comment",
   "devDependencies": {
-    "nodemon": "^3.1.10"
+    "nodemon": "^3.1.10",
     "nodemon": "^3.0.1"
   }
 }
