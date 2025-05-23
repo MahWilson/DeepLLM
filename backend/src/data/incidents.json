@@ -1,0 +1,540 @@
+[
+  {
+    "id": 1,
+    "type": "accident",
+    "location": {
+      "latitude": 37.7749,
+      "longitude": -122.4194
+    },
+    "description": "Two-car collision on Main Street",
+    "severity": "high",
+    "status": "resolved",
+    "timestamp": "2024-03-20T10:00:00.000Z"
+  },
+  {
+    "type": "accident",
+    "location": {
+      "latitude": 60,
+      "longitude": -5
+    },
+    "description": "car crash",
+    "severity": "low",
+    "id": 1746629869476,
+    "timestamp": "2025-05-07T14:57:49.476Z",
+    "status": "active"
+  },
+  {
+    "type": "flood",
+    "location": {
+      "latitude": 51.5074,
+      "longitude": -0.1278
+    },
+    "description": "big",
+    "severity": "high",
+    "id": 1746629992921,
+    "timestamp": "2025-05-07T14:59:52.921Z",
+    "status": "active"
+  },
+  {
+    "type": "fire",
+    "location": {
+      "latitude": 51.5074,
+      "longitude": -0.1278
+    },
+    "description": "big",
+    "severity": "high",
+    "id": 1746630015458,
+    "timestamp": "2025-05-07T15:00:15.458Z",
+    "status": "active"
+  },
+  {
+    "type": "fire",
+    "location": {
+      "latitude": 51.5074,
+      "longitude": -0.1278
+    },
+    "description": "smol",
+    "severity": "low",
+    "id": 1746630027804,
+    "timestamp": "2025-05-07T15:00:27.804Z",
+    "status": "active"
+  },
+  {
+    "type": "pothole",
+    "location": {
+      "latitude": 51.5074,
+      "longitude": -0.1278
+    },
+    "description": "big pothole",
+    "severity": "low",
+    "id": 1746630374777,
+    "timestamp": "2025-05-07T15:06:14.777Z",
+    "status": "active"
+  },
+  {
+    "type": "obstruction",
+    "location": {
+      "latitude": 51.5074,
+      "longitude": -0.1278
+    },
+    "description": "big ",
+    "severity": "low",
+    "id": 1746630381817,
+    "timestamp": "2025-05-07T15:06:21.817Z",
+    "status": "active"
+  },
+  {
+    "type": "police",
+    "location": {
+      "latitude": 51.5074,
+      "longitude": -0.1278
+    },
+    "description": "big ",
+    "severity": "low",
+    "id": 1746630385224,
+    "timestamp": "2025-05-07T15:06:25.224Z",
+    "status": "active"
+  },
+  {
+    "type": "road_closure",
+    "location": {
+      "latitude": 51.5074,
+      "longitude": -0.1278
+    },
+    "description": "big ",
+    "severity": "low",
+    "id": 1746630390715,
+    "timestamp": "2025-05-07T15:06:30.715Z",
+    "status": "active"
+  },
+  {
+    "type": "hazard",
+    "location": {
+      "latitude": 51.5074,
+      "longitude": -0.1278
+    },
+    "description": "big ",
+    "severity": "low",
+    "id": 1746630395629,
+    "timestamp": "2025-05-07T15:06:35.629Z",
+    "status": "active"
+  },
+  {
+    "type": "road_work",
+    "location": {
+      "latitude": 51.5074,
+      "longitude": -0.1278
+    },
+    "description": "big ",
+    "severity": "low",
+    "id": 1746630401073,
+    "timestamp": "2025-05-07T15:06:41.073Z",
+    "status": "active"
+  },
+  {
+    "type": "traffic_jam",
+    "location": {
+      "latitude": 51.5074,
+      "longitude": -0.1278
+    },
+    "description": "big ",
+    "severity": "low",
+    "id": 1746630403569,
+    "timestamp": "2025-05-07T15:06:43.569Z",
+    "status": "active"
+  },
+  {
+    "type": "other",
+    "location": {
+      "latitude": 51.5074,
+      "longitude": -0.1278
+    },
+    "description": "big ",
+    "severity": "low",
+    "id": 1746630406528,
+    "timestamp": "2025-05-07T15:06:46.528Z",
+    "status": "active"
+  },
+  {
+    "description": "New test incident",
+    "location": {
+      "longitude": -0.1278,
+      "latitude": 51.5074
+    },
+    "type": "accident",
+    "severity": "high",
+    "id": 1746631679677,
+    "timestamp": "2025-05-07T15:27:59.677Z",
+    "status": "active"
+  },
+  {
+    "title": "Bznsb",
+    "description": "jhshaha",
+    "type": "road_closure",
+    "severity": "high",
+    "location": {
+      "latitude": 51.5074,
+      "longitude": -0.1278
+    },
+    "id": 1746688763882,
+    "timestamp": "2025-05-08T07:19:23.882Z",
+    "status": "active"
+  },
+  {
+    "title": "Hahaha",
+    "description": "banabaj",
+    "type": "blocked_lane",
+    "severity": "high",
+    "location": {
+      "latitude": 51.5074,
+      "longitude": -0.1278
+    },
+    "id": 1746688952102,
+    "timestamp": "2025-05-08T07:22:32.102Z",
+    "status": "active"
+  },
+  {
+    "title": "Hzbab",
+    "description": "bshaha",
+    "type": "road_work",
+    "severity": "medium",
+    "location": {
+      "latitude": 51.5074,
+      "longitude": -0.1278
+    },
+    "id": 1746689032257,
+    "timestamp": "2025-05-08T07:23:52.257Z",
+    "status": "active"
+  },
+  {
+    "title": "Hzjaha",
+    "description": "hahaiaj",
+    "type": "pothole",
+    "severity": "medium",
+    "location": {
+      "latitude": 51.5074,
+      "longitude": -0.1278
+    },
+    "id": 1746689110925,
+    "timestamp": "2025-05-08T07:25:10.925Z",
+    "status": "active"
+  },
+  {
+    "title": "Vsbshs",
+    "description": "janjaaj",
+    "type": "road_work",
+    "severity": "medium",
+    "location": {
+      "latitude": 51.5074,
+      "longitude": -0.1278
+    },
+    "id": 1746689182529,
+    "timestamp": "2025-05-08T07:26:22.529Z",
+    "status": "active"
+  },
+  {
+    "title": "U uvu",
+    "description": "u jcuv",
+    "type": "road_work",
+    "severity": "medium",
+    "location": {
+      "latitude": 51.5074,
+      "longitude": -0.1278
+    },
+    "id": 1746689235101,
+    "timestamp": "2025-05-08T07:27:15.101Z",
+    "status": "active"
+  },
+  {
+    "title": "Tbtvr",
+    "description": "tvtbr",
+    "type": "road_work",
+    "severity": "medium",
+    "location": {
+      "latitude": 51.5074,
+      "longitude": -0.1278
+    },
+    "id": 1746689292619,
+    "timestamp": "2025-05-08T07:28:12.619Z",
+    "status": "active"
+  },
+  {
+    "title": "Bg gvt",
+    "description": " ybgv",
+    "type": "police",
+    "severity": "medium",
+    "location": {
+      "latitude": 51.5074,
+      "longitude": -0.1278
+    },
+    "id": 1746689372118,
+    "timestamp": "2025-05-08T07:29:32.118Z",
+    "status": "active"
+  },
+  {
+    "title": "H ub",
+    "description": "ububub truck call my colder ￼",
+    "type": "other",
+    "severity": "medium",
+    "location": {
+      "latitude": 51.5074,
+      "longitude": -0.1278
+    },
+    "id": 1746712395107,
+    "timestamp": "2025-05-08T13:53:15.107Z",
+    "status": "active"
+  },
+  {
+    "title": "Banba",
+    "description": "usuaha\n",
+    "type": "police",
+    "severity": "high",
+    "location": {
+      "latitude": 51.5074,
+      "longitude": -0.1278
+    },
+    "id": 1746718805558,
+    "timestamp": "2025-05-08T15:40:05.558Z",
+    "status": "active"
+  },
+  {
+    "title": "bhh",
+    "description": "Bgy",
+    "type": "other",
+    "severity": "medium",
+    "location": {
+      "latitude": 51.5074,
+      "longitude": -0.1278
+    },
+    "id": 1746718914593,
+    "timestamp": "2025-05-08T15:41:54.593Z",
+    "status": "active"
+  },
+  {
+    "type": "flood",
+    "severity": "medium",
+    "location": {
+      "latitude": 2.898524224230981,
+      "longitude": 101.79423501330388
+    },
+    "id": 1746886610857,
+    "timestamp": "2025-05-10T14:16:50.857Z",
+    "status": "active"
+  },
+  {
+    "type": "traffic_jam",
+    "severity": "medium",
+    "location": {
+      "latitude": 2.898528928942252,
+      "longitude": 101.79418704222377
+    },
+    "id": 1746890783779,
+    "timestamp": "2025-05-10T15:26:23.779Z",
+    "status": "active"
+  },
+  {
+    "type": "flood",
+    "severity": "medium",
+    "location": {
+      "latitude": 2.898528928942252,
+      "longitude": 101.79418704222377
+    },
+    "id": 1746892495580,
+    "timestamp": "2025-05-10T15:54:55.580Z",
+    "status": "active"
+  },
+  {
+    "type": "traffic_jam",
+    "severity": "medium",
+    "location": {
+      "latitude": 3.1457,
+      "longitude": 101.712
+    },
+    "id": 1746892695375,
+    "timestamp": "2025-05-10T15:58:15.375Z",
+    "status": "active"
+  },
+  {
+    "title": "Accident Incident",
+    "description": "Reported via voice command: accident with high severity",
+    "type": "accident",
+    "severity": "high",
+    "location": {
+      "latitude": 2.898525365092014,
+      "longitude": 101.79423540142933
+    },
+    "id": 1746905602922,
+    "timestamp": "2025-05-10T19:33:22.922Z",
+    "status": "active"
+  },
+  {
+    "title": "Accident Incident",
+    "description": "Reported via voice command: accident with high severity",
+    "type": "accident",
+    "severity": "high",
+    "location": {
+      "latitude": 2.8985253785730216,
+      "longitude": 101.7942353940366
+    },
+    "id": 1746905755523,
+    "timestamp": "2025-05-10T19:35:55.523Z",
+    "status": "active"
+  },
+  {
+    "type": "flood",
+    "severity": "medium",
+    "location": {
+      "latitude": 3.1422,
+      "longitude": 101.7
+    },
+    "id": 1746910821272,
+    "timestamp": "2025-05-10T21:00:21.272Z",
+    "status": "active"
+  },
+  {
+    "type": "hazard",
+    "severity": "high",
+    "location": {
+      "latitude": 3.1457,
+      "longitude": 101.712
+    },
+    "id": 1746968389559,
+    "timestamp": "2025-05-11T12:59:49.559Z",
+    "status": "active"
+  },
+  {
+    "type": "blocked_lane",
+    "severity": "medium",
+    "location": {
+      "latitude": 3.0833,
+      "longitude": 101.7333
+    },
+    "id": 1746968398299,
+    "timestamp": "2025-05-11T12:59:58.299Z",
+    "status": "active"
+  },
+  {
+    "type": "road_work",
+    "severity": "low",
+    "location": {
+      "latitude": 3.0333,
+      "longitude": 101.75
+    },
+    "id": 1746968409965,
+    "timestamp": "2025-05-11T13:00:09.965Z",
+    "status": "active"
+  },
+  {
+    "title": "Accident Incident",
+    "description": "Reported via voice command: accident with high severity",
+    "type": "accident",
+    "severity": "high",
+    "location": {
+      "latitude": 2.898442056686462,
+      "longitude": 101.79414296941911
+    },
+    "id": 1746970309678,
+    "timestamp": "2025-05-11T13:31:49.678Z",
+    "status": "active"
+  },
+  {
+    "type": "hazard",
+    "severity": "medium",
+    "location": {
+      "latitude": 3.0833,
+      "longitude": 101.7333
+    },
+    "id": 1746972872177,
+    "timestamp": "2025-05-11T14:14:32.177Z",
+    "status": "active"
+  },
+  {
+    "title": "Accident Incident",
+    "description": "Reported via voice command: accident with high severity",
+    "type": "accident",
+    "severity": "high",
+    "location": {
+      "latitude": 2.898520565558252,
+      "longitude": 101.79424509003414
+    },
+    "id": 1746972895279,
+    "timestamp": "2025-05-11T14:14:55.279Z",
+    "status": "active"
+  },
+  {
+    "title": "Accident Incident",
+    "description": "Reported via voice command: accident with high severity",
+    "type": "accident",
+    "severity": "high",
+    "location": {
+      "latitude": 2.8985216824668467,
+      "longitude": 101.79424342065715
+    },
+    "id": 1746973261811,
+    "timestamp": "2025-05-11T14:21:01.811Z",
+    "status": "active"
+  },
+  {
+    "title": "Accident Incident",
+    "description": "Reported via voice command: accident with high severity",
+    "type": "accident",
+    "severity": "high",
+    "location": {
+      "latitude": 2.8985220597698476,
+      "longitude": 101.79424287719648
+    },
+    "id": 1746973459333,
+    "timestamp": "2025-05-11T14:24:19.333Z",
+    "status": "active"
+  },
+  {
+    "title": "Accident Incident",
+    "description": "Reported via voice command: accident with high severity",
+    "type": "accident",
+    "severity": "high",
+    "location": {
+      "latitude": 2.898522393908489,
+      "longitude": 101.7942423959091
+    },
+    "id": 1746973579502,
+    "timestamp": "2025-05-11T14:26:19.502Z",
+    "status": "active"
+  },
+  {
+    "title": "Accident Incident",
+    "description": "Reported via voice command: accident with high severity",
+    "type": "accident",
+    "severity": "high",
+    "location": {
+      "latitude": 2.898522497189666,
+      "longitude": 101.79424224714474
+    },
+    "id": 1746973659725,
+    "timestamp": "2025-05-11T14:27:39.725Z",
+    "status": "active"
+  },
+  {
+    "type": "flood",
+    "severity": "medium",
+    "location": {
+      "latitude": 3.1422,
+      "longitude": 101.7
+    },
+    "id": 1746973820562,
+    "timestamp": "2025-05-11T14:30:20.562Z",
+    "status": "active"
+  },
+  {
+    "title": "Accident Incident",
+    "description": "Reported via voice command: accident with high severity",
+    "type": "accident",
+    "severity": "high",
+    "location": {
+      "latitude": 2.898526380149873,
+      "longitude": 101.79423540748031
+    },
+    "id": 1746974556095,
+    "timestamp": "2025-05-11T14:42:36.095Z",
+    "status": "active"
+  }
+]

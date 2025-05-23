@@ -7,6 +7,9 @@ yarn-error.log*
 lerna-debug.log*
 .pnpm-debug.log*
 
+# Reference project
+smart-way-mvp/
+
 # Diagnostic reports (https://nodejs.org/api/report.html)
 report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
 
@@ -78,6 +81,15 @@ web_modules/
 .env.test.local
 .env.production.local
 .env.local
+.env.*.local
+
+# Secret configuration files
+config.secret.ts
+config.secret.js
+*.secret.*
+**/config.secret.*
+**/config.secret.js
+**/config.secret.ts
 
 # parcel-bundler cache (https://parceljs.org/)
 .cache
@@ -134,3 +146,30 @@ dist
 .yarn/build-state.yml
 .yarn/install-state.gz
 .pnp.*
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# Dependencies
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Build outputs
+dist/
+build/
+.next/
+out/
+
+# IDE and editor files
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
