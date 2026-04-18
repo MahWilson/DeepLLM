@@ -1,4 +1,4 @@
-# Navigation App with Voice Commands
+# Navigation App with Voice Commands 
 
 A full-stack navigation application with voice command capabilities, real-time traffic updates, and incident reporting features. Built with React Native (Expo), Node.js, and Google Maps API.
 
